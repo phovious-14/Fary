@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { StoryCanvas } from "@/components/story-canvas";
 import { CameraCapture } from "@/components/camera-capture";
 import { saveStory } from "@/lib/stories";
-import { useCursor } from "@/Fary/contexts/cursor-context";
+import { useCursor } from "@/contexts/cursor-context";
 
 const FILTERS = [
   { name: "Normal", class: "", icon: "✨" },

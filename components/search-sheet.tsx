@@ -10,7 +10,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { StorySearch } from "@/components/story-search";
-import { useDebounce } from "../Fary/hooks/use-debounce";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface Story {
   id: string;

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { CursorType } from "@/Fary/contexts/cursor-context";
+import { CursorType } from "@/contexts/cursor-context";
 
 interface StoryCursorProps {
   type: CursorType;
