@@ -88,8 +88,26 @@ export default function CreateStory() {
     } else if (file.type.startsWith("video/")) {
       setMediaType("video");
     } else {
-      alert("Please upload an image or video file");
-      return;
+      // Check file extension for video files
+      const videoExtensions = [
+        ".mp4",
+        ".webm",
+        ".ogg",
+        ".mov",
+        ".avi",
+        ".wmv",
+        ".mkv",
+      ];
+      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+
+      if (videoExtensions.includes(fileExtension)) {
+        setMediaType("video");
+      } else {
+        alert(
+          "Please select a valid video file (MP4, WebM, OGG, MOV, AVI, WMV, or MKV)"
+        );
+        return;
+      }
     }
 
     setMediaFile(file);
@@ -125,7 +143,6 @@ export default function CreateStory() {
     if (showCamera) return;
 
     if (fileInputRef.current) {
-      fileInputRef.current.accept = type === "image" ? "image/*" : "video/*";
       fileInputRef.current.click();
     }
   };
@@ -274,21 +291,38 @@ export default function CreateStory() {
             />
           ) : mediaPreview && mediaType ? (
             <div className="relative w-full h-full">
-              <StoryCanvas
-                mediaUrl={mediaPreview}
-                mediaType={mediaType}
-                filter={selectedFilter}
-                text={text}
-                textPosition={textPosition}
-                textColor={textColor}
-                fontSize={fontSize}
-                textStyle={textStyle}
-                onTextPositionChange={setTextPosition}
-                autoPlay={true}
-                loop={true}
-                muted={true}
-                controls={false}
-              />
+              {mediaType === "video" ? (
+                <video
+                  src={mediaPreview}
+                  className="w-full h-full object-contain"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  controls
+                  style={{
+                    maxHeight: "100%",
+                    maxWidth: "100%",
+                    objectFit: "contain",
+                  }}
+                />
+              ) : (
+                <StoryCanvas
+                  mediaUrl={mediaPreview}
+                  mediaType={mediaType}
+                  filter={selectedFilter}
+                  text={text}
+                  textPosition={textPosition}
+                  textColor={textColor}
+                  fontSize={fontSize}
+                  textStyle={textStyle}
+                  onTextPositionChange={setTextPosition}
+                  autoPlay={true}
+                  loop={true}
+                  muted={true}
+                  controls={false}
+                />
+              )}
 
               {/* Action Menu - Only show when showActionMenu is true */}
               {showActionMenu && (
@@ -436,7 +470,6 @@ export default function CreateStory() {
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileUpload}
-            accept="image/*,video/*"
           />
         </div>
 
@@ -562,6 +595,7 @@ export default function CreateStory() {
                               loop
                               muted
                               playsInline
+                              controls
                             />
                           )}
                         </div>
