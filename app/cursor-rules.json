@@ -1,0 +1,159 @@
+{
+    "cursorRules": {
+      "version": "1.0.0",
+      "projectName": "Instagram-like Stories with AR",
+      "globals": {
+        "defaultCursorShape": "arrow",
+        "defaultCursorSize": 24,
+        "transitionDuration": 200,
+        "hoverFeedback": true
+      },
+      "contextualCursors": {
+        "storyViewing": {
+          "idle": {
+            "shape": "arrow",
+            "opacity": 0.8,
+            "autoHide": {
+              "enabled": true,
+              "afterMs": 2500
+            }
+          },
+          "storyNavigation": {
+            "leftEdge": {
+              "shape": "chevron-left",
+              "size": 32,
+              "color": "#FFFFFF",
+              "background": "rgba(0,0,0,0.3)",
+              "borderRadius": "50%"
+            },
+            "rightEdge": {
+              "shape": "chevron-right",
+              "size": 32,
+              "color": "#FFFFFF",
+              "background": "rgba(0,0,0,0.3)",
+              "borderRadius": "50%"
+            }
+          },
+          "progressBar": {
+            "shape": "arrow",
+            "feedback": {
+              "hover": {
+                "scale": 1.2,
+                "color": "#FFFFFF"
+              }
+            }
+          }
+        },
+        "arMode": {
+          "placement": {
+            "shape": "hand",
+            "size": 40,
+            "color": "#00AAFF",
+            "pulseEffect": true,
+            "pulseColor": "rgba(0,170,255,0.3)",
+            "pulseInterval": 1500
+          },
+          "adjustment": {
+            "shape": "move",
+            "feedback": {
+              "active": {
+                "color": "#FFCC00",
+                "trail": {
+                  "enabled": true,
+                  "duration": 300,
+                  "color": "rgba(255,204,0,0.2)"
+                }
+              }
+            }
+          },
+          "capture": {
+            "shape": "camera",
+            "size": 48,
+            "feedback": {
+              "click": {
+                "animation": "shrink-grow",
+                "duration": 300
+              }
+            }
+          }
+        },
+        "creation": {
+          "drawing": {
+            "shape": "pencil",
+            "size": 16,
+            "color": "dynamic",
+            "trail": {
+              "enabled": true,
+              "duration": 800,
+              "fadeOut": true
+            }
+          },
+          "text": {
+            "shape": "text",
+            "size": 24,
+            "color": "#FFFFFF"
+          },
+          "stickers": {
+            "shape": "hand",
+            "grabbing": {
+              "shape": "hand-grab",
+              "scale": 0.8
+            }
+          }
+        }
+      },
+      "gestureRecognition": {
+        "pinchToZoom": {
+          "enabled": true,
+          "cursorFeedback": {
+            "show": true,
+            "icons": ["zoom-in", "zoom-out"]
+          }
+        },
+        "rotateGesture": {
+          "enabled": true,
+          "cursorFeedback": {
+            "show": true,
+            "icon": "rotate"
+          }
+        },
+        "holdToRecord": {
+          "enabled": true,
+          "holdThresholdMs": 300,
+          "cursorFeedback": {
+            "show": true,
+            "progressRing": {
+              "color": "#FF0000",
+              "thickness": 3
+            }
+          }
+        }
+      },
+      "accessibility": {
+        "highContrastMode": {
+          "enabled": false,
+          "cursorColor": "#FFFFFF",
+          "cursorOutline": "#000000",
+          "outlineThickness": 2,
+          "size": 32
+        },
+        "increasedSize": {
+          "enabled": false,
+          "scaleFactor": 1.5
+        },
+        "motionReduction": {
+          "enabled": false,
+          "disableTrails": true,
+          "disableAnimations": true
+        }
+      },
+      "performance": {
+        "reduceEffectsOnLowFPS": true,
+        "fpsThreshold": 30,
+        "reducedEffectsSettings": {
+          "disableTrails": true,
+          "simplifyAnimations": true
+        }
+      }
+    }
+  }
