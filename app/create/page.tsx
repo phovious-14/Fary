@@ -33,6 +33,8 @@ import { CameraCapture } from "@/components/camera-capture";
 import { saveStory } from "@/lib/stories";
 import { useCursor } from "@/contexts/cursor-context";
 
+const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
+const PINATA_GATEWAY_TOKEN = process.env.NEXT_PUBLIC_PINATA_GATEWAY_TOKEN;
 const FILTERS = [
   { name: "Normal", class: "", icon: "✨" },
   { name: "Grayscale", class: "grayscale", icon: "⚪" },
@@ -121,6 +123,67 @@ export default function CreateStory() {
     setShowActionMenu(true);
   };
 
+  const handlePublish = async () => {
+    if (!mediaFile || !mediaType || !mediaPreview) {
+      // Don't show alert if we're in the process of capturing from camera
+      if (!showCamera) {
+        alert("Please upload a media file first");
+      }
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Upload to IPFS
+      const formData = new FormData();
+      if (mediaFile) {
+        formData.append("file", mediaFile, mediaFile.name);
+        formData.append("network", "public");
+      }
+
+      const res = await fetch("https://uploads.pinata.cloud/v3/files", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${PINATA_JWT}`,
+        },
+        body: formData,
+      });
+
+      const resData = await res.json();
+
+      if (!res.ok) {
+        throw new Error("Failed to upload to IPFS");
+      }
+
+      console.log(`https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`);
+      const story = {
+        userId: "1", // Adding a default userId for now
+        type: mediaType,
+        url: `https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`,
+        filter: selectedFilter,
+        text: text,
+        textPosition: textPosition,
+        textColor: textColor,
+        fontSize: fontSize,
+        textStyle: textStyle,
+      };
+
+      await saveStory(story);
+
+      // Show success animation
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to publish story:", error);
+      alert("Failed to publish story. Please try again.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   // Handle camera capture
   const handleCameraCapture = (file: File) => {
     setMediaFile(file);
@@ -144,45 +207,6 @@ export default function CreateStory() {
 
     if (fileInputRef.current) {
       fileInputRef.current.click();
-    }
-  };
-
-  const handlePublish = async () => {
-    if (!mediaFile || !mediaType || !mediaPreview) {
-      // Don't show alert if we're in the process of capturing from camera
-      if (!showCamera) {
-        alert("Please upload a media file first");
-      }
-      return;
-    }
-
-    setIsPublishing(true);
-
-    try {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const story = {
-        userId: "1", // Adding a default userId for now
-        type: mediaType,
-        url: mediaPreview,
-        filter: selectedFilter,
-        text: text,
-        textPosition: textPosition,
-        textColor: textColor,
-        fontSize: fontSize,
-        textStyle: textStyle,
-      };
-
-      await saveStory(story);
-
-      // Show success animation
-      router.push("/");
-    } catch (error) {
-      console.error("Failed to publish story:", error);
-      alert("Failed to publish story. Please try again.");
-    } finally {
-      setIsPublishing(false);
     }
   };
 
