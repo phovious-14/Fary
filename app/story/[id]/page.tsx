@@ -29,6 +29,8 @@ export default function StoryPage({
   const [holdProgress, setHoldProgress] = useState(0);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [mediaPosition, setMediaPosition] = useState({ x: 0, y: 0 });
+  const [mediaScale, setMediaScale] = useState(1);
 
   // Load story data
   useEffect(() => {
@@ -43,6 +45,8 @@ export default function StoryPage({
         setTextPosition(storyData.textPosition || { x: 50, y: 50 });
         setFontSize(storyData.fontSize || 24);
         setTextColor(storyData.textColor || "#ffffff");
+        setMediaPosition(storyData.mediaPosition || { x: 0, y: 0 });
+        setMediaScale(storyData.mediaScale || 1);
       } else {
         console.error("Story not found with ID:", storyId);
       }
@@ -299,6 +303,9 @@ export default function StoryPage({
             onEnded={handleVideoEnded}
             isPaused={isPaused}
             onError={handleVideoError}
+            mediaPosition={mediaPosition}
+            mediaScale={mediaScale}
+            notDraggable={true}
           />
 
           {/* Transparent overlay for touch/mouse events */}

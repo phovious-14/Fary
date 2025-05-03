@@ -10,9 +10,11 @@ export interface Story {
   fontSize: number;
   createdAt: number;
   tags?: string[];
+  mediaPosition: { x: number; y: number };
+  mediaScale: number;
 }
 
-interface UserStories {
+export interface UserStories {
   userId: string;
   stories: Story[];
 }

@@ -26,6 +26,7 @@ import {
   Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Draggable from "react-draggable";
 
 // Assuming these components exist or will be created
 import { StoryCanvas } from "@/components/story-canvas";
@@ -66,6 +67,9 @@ export default function CreateStory() {
   const [selectedFilter, setSelectedFilter] = useState("");
   const [text, setText] = useState("");
   const [textPosition, setTextPosition] = useState({ x: 195, y: 300 });
+  const [mediaPosition, setMediaPosition] = useState({ x: 0, y: 0 });
+  const [mediaScale, setMediaScale] = useState(1);
+  const [isMediaDragging, setIsMediaDragging] = useState(false);
   const [fontSize, setFontSize] = useState(24);
   const [textColor, setTextColor] = useState("#ffffff");
   const [textStyle, setTextStyle] = useState("font-sans");
@@ -78,6 +82,9 @@ export default function CreateStory() {
   const [showTextStyles, setShowTextStyles] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(true);
   const [showCamera, setShowCamera] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const mediaRef = useRef<HTMLDivElement>(null);
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,7 +166,10 @@ export default function CreateStory() {
         throw new Error("Failed to upload to IPFS");
       }
 
-      console.log(`https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`);
+      console.log(
+        `https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`
+      );
+
       const story = {
         userId: "1", // Adding a default userId for now
         type: mediaType,
@@ -170,6 +180,8 @@ export default function CreateStory() {
         textColor: textColor,
         fontSize: fontSize,
         textStyle: textStyle,
+        mediaPosition: mediaPosition,
+        mediaScale: mediaScale,
       };
 
       await saveStory(story);
@@ -254,6 +266,30 @@ export default function CreateStory() {
     };
   }, []);
 
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleDragStop = (e: any, data: { x: number; y: number }) => {
+    setIsDragging(false);
+    setTextPosition({ x: data.x, y: data.y });
+  };
+
+  const handleMediaDragStart = () => {
+    setIsMediaDragging(true);
+  };
+
+  const handleMediaDragStop = (e: any, data: { x: number; y: number }) => {
+    setIsMediaDragging(false);
+    setMediaPosition({ x: data.x, y: data.y });
+  };
+
+  const handleMediaScale = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setMediaScale((prev) => Math.min(Math.max(prev * delta, 0.5), 2));
+  };
+
   return (
     <div className="fixed inset-0 flex justify-center bg-black">
       <div className="w-full max-w-[390px] h-full flex flex-col bg-black border-x border-gray-800">
@@ -306,6 +342,7 @@ export default function CreateStory() {
         <div
           className="flex-1 relative overflow-hidden bg-gradient-to-b from-gray-900 to-black"
           onClick={handleCanvasTap}
+          onWheel={handleMediaScale}
         >
           {showCamera ? (
             <CameraCapture
@@ -315,135 +352,87 @@ export default function CreateStory() {
             />
           ) : mediaPreview && mediaType ? (
             <div className="relative w-full h-full">
-              {mediaType === "video" ? (
-                <video
-                  src={mediaPreview}
-                  className="w-full h-full object-contain"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  controls
+              <Draggable
+                nodeRef={mediaRef as React.RefObject<HTMLElement>}
+                position={mediaPosition}
+                onStart={handleMediaDragStart}
+                onStop={handleMediaDragStop}
+              >
+                <div
+                  ref={mediaRef}
+                  className="absolute cursor-move"
                   style={{
-                    maxHeight: "100%",
-                    maxWidth: "100%",
-                    objectFit: "contain",
+                    transform: `scale(${mediaScale})`,
+                    transformOrigin: "center",
                   }}
-                />
-              ) : (
-                <StoryCanvas
-                  mediaUrl={mediaPreview}
-                  mediaType={mediaType}
-                  filter={selectedFilter}
-                  text={text}
-                  textPosition={textPosition}
-                  textColor={textColor}
-                  fontSize={fontSize}
-                  textStyle={textStyle}
-                  onTextPositionChange={setTextPosition}
-                  autoPlay={true}
-                  loop={true}
-                  muted={true}
-                  controls={false}
-                />
+                >
+                  {mediaType === "video" ? (
+                    <video
+                      src={mediaPreview}
+                      className="w-full h-full object-contain"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      controls
+                      style={{
+                        maxHeight: "100%",
+                        maxWidth: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  ) : (
+                    <StoryCanvas
+                      mediaUrl={mediaPreview}
+                      mediaType={mediaType}
+                      filter={selectedFilter}
+                      text={text}
+                      textPosition={textPosition}
+                      textColor={textColor}
+                      fontSize={fontSize}
+                      textStyle={textStyle}
+                      onTextPositionChange={setTextPosition}
+                      autoPlay={true}
+                      loop={true}
+                      muted={true}
+                      controls={false}
+                      mediaPosition={mediaPosition}
+                      mediaScale={mediaScale}
+                      notDraggable={false}
+                    />
+                  )}
+                </div>
+              </Draggable>
+
+              {/* Draggable Text Element */}
+              {text && (
+                <Draggable
+                  nodeRef={nodeRef as React.RefObject<HTMLElement>}
+                  position={textPosition}
+                  onStart={handleDragStart}
+                  onStop={handleDragStop}
+                >
+                  <div
+                    ref={nodeRef}
+                    className="absolute cursor-move select-none"
+                    style={{
+                      color: textColor,
+                      fontSize: `${fontSize}px`,
+                      fontFamily: textStyle,
+                    }}
+                  >
+                    {text}
+                  </div>
+                </Draggable>
               )}
 
               {/* Action Menu - Only show when showActionMenu is true */}
               {showActionMenu && (
                 <>
-                  {/* Top Actions */}
-                  <div className="absolute top-4 left-0 right-0 flex justify-between px-4 animate-fade-in">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={handleUploadHover}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          triggerFileUpload("image");
-                        }}
-                      >
-                        <ImageIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={handleTextToolHover}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTab("text");
-                        }}
-                      >
-                        <Type className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={handleFilterHover}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTab("filters");
-                        }}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={() => setCursor && setCursor("music")}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Music className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={() => setCursor && setCursor("sticker")}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Sticker className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Bottom Actions */}
                   <div className="absolute bottom-4 left-0 right-0 flex justify-between items-center px-4 animate-fade-in">
                     <div className="flex items-center gap-2">
-                      <button
-                        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={handleUploadHover}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          triggerFileUpload("image");
-                        }}
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={handleTextToolHover}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTab("text");
-                        }}
-                      >
-                        <Type className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-                        onMouseEnter={handleFilterHover}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTab("filters");
-                        }}
-                      >
-                        <Sparkles className="h-5 w-5" />
-                      </button>
+                      {/* Removed the action buttons */}
                     </div>
                     <button
                       className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center hover:from-purple-600 hover:to-pink-600 transition-colors"

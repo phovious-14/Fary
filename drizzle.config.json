@@ -1,0 +1,8 @@
+{
+  "schema": "./db/schema.ts",
+  "out": "./db/migrations",
+  "driver": "pg",
+  "dbCredentials": {
+    "url": "process.env.DATABASE_URL"
+  }
+}

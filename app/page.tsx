@@ -3,17 +3,32 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
-import { getAllUserStories } from "@/lib/stories";
+import { getAllUserStories, Story, UserStories } from "@/lib/stories";
 import { useEffect, useState } from "react";
 import { SearchSheet } from "@/components/search-sheet";
 
 export default function Home() {
-  const [userStories, setUserStories] = useState(getAllUserStories());
+  const [userStories, setUserStories] = useState<UserStories[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Function to check if a story is expired (older than 1 day)
+  const isStoryExpired = (story: Story) => {
+    const storyDate = new Date(story.createdAt);
+    const now = new Date();
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    return now.getTime() - storyDate.getTime() > oneDayInMs;
+  };
+
   useEffect(() => {
-    // Refresh stories when component mounts
-    setUserStories(getAllUserStories());
+    // Only run on client side
+    const allUserStories = getAllUserStories();
+
+    // Filter out users with all expired stories
+    const validUserStories = allUserStories.filter((userStory: UserStories) =>
+      userStory.stories.some((story: Story) => !isStoryExpired(story))
+    );
+
+    setUserStories(validUserStories);
   }, []);
 
   return (

@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { X, ChevronLeft } from "lucide-react";
 import { getStoriesByUserId } from "@/lib/stories";
 import { use } from "react";
+import { StoryCanvas } from "@/components/story-canvas";
 
 export default function UserStoriesPage({
   params,
@@ -25,12 +26,29 @@ export default function UserStoriesPage({
   const [isClient, setIsClient] = useState(false);
   const isNavigatingRef = useRef(false);
 
+  // Function to check if a story is expired (older than 1 day)
+  const isStoryExpired = (story: any) => {
+    const storyDate = new Date(story.createdAt);
+    const now = new Date();
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    return now.getTime() - storyDate.getTime() > oneDayInMs;
+  };
+
   // Load stories on client-side only
   useEffect(() => {
     setIsClient(true);
     const userStories = getStoriesByUserId(userId);
-    setStories(userStories);
-    setCurrentStory(userStories[0] || null);
+    // Filter out expired stories
+    const validStories = userStories.filter((story) => !isStoryExpired(story));
+
+    if (validStories.length === 0) {
+      // If all stories are expired, redirect to home page
+      router.push("/");
+      return;
+    }
+
+    setStories(validStories);
+    setCurrentStory(validStories[0] || null);
   }, [userId]);
 
   // Update current story when index changes
@@ -282,42 +300,22 @@ export default function UserStoriesPage({
 
         {/* Story content */}
         <div className="h-full flex items-center justify-center bg-black overflow-hidden">
-          {currentStory.type === "image" ? (
-            <img
-              src={currentStory.url}
-              alt="Story"
-              className={`h-full w-full object-contain ${currentStory.filter}`}
-            />
-          ) : (
-            <video
-              ref={videoRef}
-              src={currentStory.url}
-              className={`h-full w-full object-contain ${currentStory.filter}`}
-              style={{ objectFit: "contain" }}
-              autoPlay
-              muted
-              playsInline
-              controls={false}
-            />
-          )}
-
-          {/* Text overlay */}
-          {currentStory.text && (
-            <div
-              className="absolute text-center"
-              style={{
-                left: `${currentStory.textPosition.x}%`,
-                top: `${currentStory.textPosition.y}%`,
-                transform: "translate(-50%, -50%)",
-                color: currentStory.textColor,
-                fontSize: `${currentStory.fontSize}px`,
-                textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-                maxWidth: "80%",
-              }}
-            >
-              {currentStory.text}
-            </div>
-          )}
+          <StoryCanvas
+            mediaUrl={currentStory.url}
+            mediaType={currentStory.type}
+            filter={currentStory.filter}
+            text={currentStory.text}
+            textPosition={currentStory.textPosition}
+            textColor={currentStory.textColor}
+            fontSize={currentStory.fontSize}
+            autoPlay={true}
+            loop={true}
+            muted={true}
+            controls={false}
+            mediaPosition={currentStory.mediaPosition}
+            mediaScale={currentStory.mediaScale}
+            notDraggable={true}
+          />
         </div>
       </div>
     </div>

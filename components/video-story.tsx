@@ -278,6 +278,7 @@ export function VideoStory({
         autoPlay={autoPlay}
         loop={loop}
         muted={muted}
+        draggable={false}
         onTouchStart={(e) => e.preventDefault()}
         onTouchEnd={(e) => e.preventDefault()}
       />
