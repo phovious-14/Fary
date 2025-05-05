@@ -1,16 +1,18 @@
 {
   "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
+    "header": "${NEXT_PUBLIC_FARCASTER_HEADER}",
+    "payload": "${NEXT_PUBLIC_FARCASTER_PAYLOAD}",
+    "signature": "${NEXT_PUBLIC_FARCASTER_SIGNATURE}"
   },
   "frame": {
-    "name": "dTech - Farcaster docs",
-    "version": "0.0.1",
-    "iconUrl": "https://dtech.vision/icon.png",
-    "homeUrl": "https://dtech.vision/farcaster",
-    "splashImageUrl": "https://dtech.vision/icon.png",
-    "splashBackgroundColor": "#f7f7f7",
-    "webhookUrl": "https://dtech.vision/webhookurl"
+    "version": "1",
+    "name": "Example Frame",
+    "iconUrl": "https://fary-story.netlify.app/icon.png",
+    "homeUrl": "https://fary-story.netlify.app",
+    "imageUrl": "https://fary-story.netlify.app/image.png",
+    "buttonTitle": "Check this out",
+    "splashImageUrl": "https://fary-story.netlify.app/splash.png",
+    "splashBackgroundColor": "#eeccff",
+    "webhookUrl": "https://fary-story.netlify.app/api/webhook"
   }
 }
