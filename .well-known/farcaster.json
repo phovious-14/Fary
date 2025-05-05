@@ -1,0 +1,16 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "frame": {
+    "name": "dTech - Farcaster docs",
+    "version": "0.0.1",
+    "iconUrl": "https://dtech.vision/icon.png",
+    "homeUrl": "https://dtech.vision/farcaster",
+    "splashImageUrl": "https://dtech.vision/icon.png",
+    "splashBackgroundColor": "#f7f7f7",
+    "webhookUrl": "https://dtech.vision/webhookurl"
+  }
+}

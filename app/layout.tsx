@@ -13,18 +13,17 @@ const inter = Inter({ subsets: ["latin"] });
 
 // Farcaster frame configuration
 const frame = {
-  version: "vNext",
-  image: "https://fary-story.netlify.app/og.png",
-  buttons: [
-    {
-      label: "📸 View Story",
-      action: "link",
-      target: "https://fary-story.netlify.app/",
+  version: "next",
+  imageUrl: "https://dtech.vision/frame-thumbnail.png",
+  button: {
+    title: "Learn Farcaster",
+    action: {
+      type: "launch_frame",
+      name: "dTech - Farcaster Boutique",
+      url: "https://dtech.vision/farcaster/",
+      splashImageUrl: "https://dtech.vision/icon.png",
+      splashBackgroundColor: "#f7f7f7",
     },
-  ],
-  post_url: "https://fary-story.netlify.app/api/frame",
-  input: {
-    text: "Enter your story text",
   },
 };
 
