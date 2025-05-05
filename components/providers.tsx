@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "../provider/config";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CursorProvider } from "@/contexts/cursor-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = new QueryClient();
@@ -16,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <CursorProvider>{children}</CursorProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>

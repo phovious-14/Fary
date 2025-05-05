@@ -49,13 +49,11 @@ export default function RootLayout({
         <meta name="fc:frame" content={JSON.stringify(frame)} />
       </head>
       <body className={`${inter.className} bg-gray-100 min-h-screen`}>
-        {/* <CursorProvider> */}
         <Providers>
           <div className="flex justify-center items-center min-h-screen">
             {children}
           </div>
         </Providers>
-        {/* </CursorProvider> */}
       </body>
     </html>
   );
