@@ -6,6 +6,8 @@ import { PlusCircle, Search } from "lucide-react";
 import { getAllUserStories, Story, UserStories } from "@/lib/stories";
 import { useEffect, useState } from "react";
 import { SearchSheet } from "@/components/search-sheet";
+import { sdk } from "@farcaster/frame-sdk";
+import ConnectButton from "@/components/ConnectButton";
 
 export default function Home() {
   const [userStories, setUserStories] = useState<UserStories[]>([]);
@@ -19,22 +21,36 @@ export default function Home() {
     return now.getTime() - storyDate.getTime() > oneDayInMs;
   };
 
+  const ready = async () => {
+    await sdk.actions.ready();
+  };
+
   useEffect(() => {
     // Only run on client side
-    const allUserStories = getAllUserStories();
+    const loadStories = () => {
+      try {
+        const allUserStories = getAllUserStories();
+        // Filter out users with all expired stories
+        const validUserStories = allUserStories.filter(
+          (userStory: UserStories) =>
+            userStory.stories.some((story: Story) => !isStoryExpired(story))
+        );
+        setUserStories(validUserStories);
+      } catch (error) {
+        console.error("Error loading stories:", error);
+        setUserStories([]);
+      }
+    };
 
-    // Filter out users with all expired stories
-    const validUserStories = allUserStories.filter((userStory: UserStories) =>
-      userStory.stories.some((story: Story) => !isStoryExpired(story))
-    );
-
-    setUserStories(validUserStories);
+    loadStories();
+    ready();
   }, []);
 
   return (
     <main className="mx-auto h-screen max-w-[390px] border-x border-gray-200 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between py-4 px-4 border-b">
         <h1 className="text-2xl font-bold">StoryGram</h1>
+        <ConnectButton />
         <button
           onClick={() => setSearchOpen(true)}
           className="p-2 rounded-full hover:bg-gray-100"

@@ -123,10 +123,10 @@ export function SearchSheet({ open, onOpenChange }: SearchSheetProps) {
     }
   };
 
-  const handleSearchChange = (query: string, newFilters: any) => {
+  const handleSearchChange = useCallback((query: string, newFilters: any) => {
     setSearchQuery(query);
     setFilters(newFilters);
-  };
+  }, []);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

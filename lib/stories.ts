@@ -19,7 +19,16 @@ export interface UserStories {
   stories: Story[];
 }
 
+// Helper function to safely access localStorage
+const getLocalStorage = (): Storage | null => {
+  if (typeof window === "undefined") return null;
+  return window.localStorage;
+};
+
 export function saveStory(story: Omit<Story, "id" | "createdAt">) {
+  const storage = getLocalStorage();
+  if (!storage) return null;
+
   const allUserStories = getAllUserStories();
   const newStory: Story = {
     ...story,
@@ -44,14 +53,21 @@ export function saveStory(story: Omit<Story, "id" | "createdAt">) {
     allUserStories[userStoriesIndex].stories.unshift(newStory);
   }
 
-  localStorage.setItem("userStories", JSON.stringify(allUserStories));
+  storage.setItem("userStories", JSON.stringify(allUserStories));
   return newStory;
 }
 
 export function getAllUserStories(): UserStories[] {
-  if (typeof window === "undefined") return [];
-  const stories = localStorage.getItem("userStories");
-  return stories ? JSON.parse(stories) : [];
+  const storage = getLocalStorage();
+  if (!storage) return [];
+
+  try {
+    const stories = storage.getItem("userStories");
+    return stories ? JSON.parse(stories) : [];
+  } catch (error) {
+    console.error("Error reading stories from localStorage:", error);
+    return [];
+  }
 }
 
 export function getStoriesByUserId(userId: string): Story[] {
@@ -70,6 +86,9 @@ export function getStoryById(id: string): Story | undefined {
 }
 
 export function deleteStory(id: string, userId: string): boolean {
+  const storage = getLocalStorage();
+  if (!storage) return false;
+
   const allUserStories = getAllUserStories();
   const userStoriesIndex = allUserStories.findIndex(
     (us) => us.userId === userId
@@ -89,6 +108,6 @@ export function deleteStory(id: string, userId: string): boolean {
     allUserStories.splice(userStoriesIndex, 1);
   }
 
-  localStorage.setItem("userStories", JSON.stringify(allUserStories));
+  storage.setItem("userStories", JSON.stringify(allUserStories));
   return true;
 }
