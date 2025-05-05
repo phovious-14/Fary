@@ -1,19 +1,21 @@
 {
+  "name": "StoryGram",
+  "description": "Create and share stories with text and filters on Farcaster",
+  "image": "https://fary-story.netlify.app/og.png",
+  "external_link": "https://fary-story.netlify.app/",
   "frame": {
-    "version": "1.0.0",
-    "name": "Fary",
-    "iconUrl": "https://fary-story.netlify.app/logo.png",
-    "homeUrl": "https://fary-story.netlify.app/",
-    "splashImageUrl": "https://fary-story.netlify.app/logo.png",
-    "splashBackgroundColor": "#f5f0ec",
-    "subtitle": "Instagram-like Stories App",
-    "description": "Create and share stories with text and filters on Farcaster",
-    "primaryCategory": "social",
-    "tags": ["stories", "social", "media", "photos", "videos"],
-    "heroImageUrl": "https://fary-story.netlify.app/og.png",
-    "tagline": "Share your stories on Farcaster",
-    "ogTitle": "StoryGram",
-    "ogDescription": "Create and share stories with text and filters on Farcaster",
-    "ogImageUrl": "https://fary-story.netlify.app/og.png"
+    "version": "vNext",
+    "image": "https://fary-story.netlify.app/og.png",
+    "buttons": [
+      {
+        "label": "📸 View Story",
+        "action": "link",
+        "target": "https://fary-story.netlify.app/"
+      }
+    ],
+    "post_url": "https://fary-story.netlify.app/api/frame",
+    "input": {
+      "text": "Enter your story text"
+    }
   }
 }

@@ -13,19 +13,18 @@ const inter = Inter({ subsets: ["latin"] });
 
 // Farcaster frame configuration
 const frame = {
-  version: "next",
-  imageUrl:
-    "https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/bafybeiguatbnjg445ifurpz7qx3sbs6mrkwoxtvbw37lqgmhl5gxk66nma?pinataGatewayToken=XQCvKAb1nnK46myuHqSdmMfHkXY_2MEx7FqJlrjfV-UAYEgkbIZr2iclDCtf5PY4", // Replace with your actual OG image URL
-  button: {
-    title: "📸 View Story",
-    action: {
-      type: "launch_frame",
-      url: "https://fary-story.netlify.app/", // Replace with your actual domain
-      name: "StoryGram",
-      splashImageUrl:
-        "https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/bafybeiguatbnjg445ifurpz7qx3sbs6mrkwoxtvbw37lqgmhl5gxk66nma?pinataGatewayToken=XQCvKAb1nnK46myuHqSdmMfHkXY_2MEx7FqJlrjfV-UAYEgkbIZr2iclDCtf5PY4", // Replace with your actual logo URL
-      splashBackgroundColor: "#f5f0ec",
+  version: "vNext",
+  image: "https://fary-story.netlify.app/og.png",
+  buttons: [
+    {
+      label: "📸 View Story",
+      action: "link",
+      target: "https://fary-story.netlify.app/",
     },
+  ],
+  post_url: "https://fary-story.netlify.app/api/frame",
+  input: {
+    text: "Enter your story text",
   },
 };
 
