@@ -8,10 +8,13 @@ import { useEffect, useState } from "react";
 import { SearchSheet } from "@/components/search-sheet";
 import { sdk } from "@farcaster/frame-sdk";
 import ConnectButton from "@/components/ConnectButton";
+import type { Context } from '@farcaster/frame-core';
 
 export default function Home() {
   const [userStories, setUserStories] = useState<UserStories[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [context, setContext] = useState<Context.FrameContext>();
 
   // Function to check if a story is expired (older than 1 day)
   const isStoryExpired = (story: Story) => {
@@ -21,9 +24,16 @@ export default function Home() {
     return now.getTime() - storyDate.getTime() > oneDayInMs;
   };
 
-  const ready = async () => {
-    await sdk.actions.ready();
-  };
+  useEffect(() => {
+    const load = async () => {
+      setContext(await sdk.context);
+      sdk.actions.ready();
+    };
+    if (sdk && !isSDKLoaded) {
+      setIsSDKLoaded(true);
+      load();
+    }
+  }, [isSDKLoaded]);
 
   useEffect(() => {
     // Only run on client side
@@ -43,19 +53,18 @@ export default function Home() {
     };
 
     loadStories();
-    ready();
   }, []);
 
   return (
     <main className="mx-auto h-screen max-w-[390px] border-x border-gray-200 overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between py-4 px-4 border-b">
-        <h1 className="text-2xl font-bold">StoryGram</h1>
+      <div className="flex items-center justify-between py-4 px-4 border-b border-slate-200">
+        <h1 className="text-2xl font-bold text-slate-900">StoryGram</h1>
         <ConnectButton />
         <button
           onClick={() => setSearchOpen(true)}
-          className="p-2 rounded-full hover:bg-gray-100"
+          className="p-2 rounded-full hover:bg-slate-100"
         >
-          <Search className="w-5 h-5" />
+          <Search className="w-5 h-5 text-slate-600" />
         </button>
       </div>
 
@@ -65,10 +74,10 @@ export default function Home() {
           href="/create"
           className="flex flex-col items-center min-w-[72px]"
         >
-          <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-1">
-            <PlusCircle className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center mb-1">
+            <PlusCircle className="w-8 h-8 text-slate-400" />
           </div>
-          <span className="text-xs">Create</span>
+          <span className="text-xs text-slate-600">Create</span>
         </Link>
 
         {userStories.map((userStory) => (
@@ -77,7 +86,7 @@ export default function Home() {
             key={userStory.userId}
             className="flex flex-col items-center min-w-[72px]"
           >
-            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 p-[2px]">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-rose-500 p-[2px]">
               <div className="w-full h-full rounded-full overflow-hidden">
                 {userStory.stories.length > 0 ? (
                   userStory.stories[0].type === "image" ? (
@@ -94,15 +103,17 @@ export default function Home() {
                     />
                   )
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400 text-xs">No stories</span>
+                  <div className="w-full h-full bg-slate-200 flex items-center justify-center">
+                    <span className="text-slate-400 text-xs">No stories</span>
                   </div>
                 )}
               </div>
             </div>
-            <span className="text-xs mt-1">User {userStory.userId}</span>
+            <span className="text-xs mt-1 text-slate-600">
+              User {userStory.userId}
+            </span>
             {userStory.stories.length > 1 && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-slate-500">
                 +{userStory.stories.length - 1} more
               </span>
             )}
@@ -114,7 +125,10 @@ export default function Home() {
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6 pb-16">
           {userStories.map((userStory) => (
-            <div key={userStory.userId} className="border-b pb-4">
+            <div
+              key={userStory.userId}
+              className="border-b border-slate-200 pb-4"
+            >
               <div className="p-3 flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                   <img
@@ -123,7 +137,9 @@ export default function Home() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="font-medium">User {userStory.userId}</span>
+                <span className="font-medium text-slate-900">
+                  User {userStory.userId}
+                </span>
               </div>
               {userStory.stories.length > 0 ? (
                 userStory.stories.map((story) => (
@@ -148,7 +164,7 @@ export default function Home() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="p-0 h-auto"
+                          className="p-0 h-auto text-slate-600 hover:text-rose-500"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -168,7 +184,7 @@ export default function Home() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="p-0 h-auto"
+                          className="p-0 h-auto text-slate-600 hover:text-slate-900"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -188,7 +204,7 @@ export default function Home() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="p-0 h-auto"
+                          className="p-0 h-auto text-slate-600 hover:text-slate-900"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -208,8 +224,8 @@ export default function Home() {
                         </Button>
                       </div>
                       {story.text && (
-                        <p className="text-sm">
-                          <span className="font-medium">
+                        <p className="text-sm text-slate-700">
+                          <span className="font-medium text-slate-900">
                             User {userStory.userId}
                           </span>{" "}
                           {story.text}
@@ -219,7 +235,7 @@ export default function Home() {
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-gray-500">
+                <div className="p-4 text-center text-slate-500">
                   No stories yet
                 </div>
               )}
@@ -228,9 +244,13 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t py-3 px-6 max-w-[390px] mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-3 px-6 max-w-[390px] mx-auto">
         <div className="flex justify-around">
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-600 hover:text-slate-900"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -247,7 +267,11 @@ export default function Home() {
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-600 hover:text-slate-900"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -265,7 +289,11 @@ export default function Home() {
             </svg>
           </Button>
           <Link href="/create">
-            <Button variant="ghost" size="sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-600 hover:text-slate-900"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"

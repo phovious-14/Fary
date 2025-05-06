@@ -291,15 +291,15 @@ export default function CreateStory() {
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center bg-black">
-      <div className="w-full max-w-[390px] h-full flex flex-col bg-black border-x border-gray-800">
+    <div className="fixed inset-0 flex justify-center bg-background">
+      <div className="w-full max-w-[390px] h-full flex flex-col bg-background border-x border-border">
         {/* Header */}
-        <div className="px-4 py-3 flex items-center justify-between border-b border-gray-800/50">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-border/50">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/")}
-            className="text-white hover:bg-gray-800/50 rounded-full w-8 h-8"
+            className="text-foreground hover:bg-muted rounded-full w-8 h-8"
             onMouseEnter={() =>
               setCursor && setCursor("navigation", { direction: "left" })
             }
@@ -308,8 +308,10 @@ export default function CreateStory() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <h1 className="text-white font-semibold text-base">New Story</h1>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+            <h1 className="text-foreground font-semibold text-base">
+              New Story
+            </h1>
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
           </div>
           <Button
             variant={mediaPreview ? "default" : "ghost"}
@@ -319,8 +321,8 @@ export default function CreateStory() {
             className={cn(
               "rounded-full px-4 h-8 transition-all duration-300",
               mediaPreview
-                ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                : "text-white hover:bg-gray-800/50"
+                ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                : "text-foreground hover:bg-muted"
             )}
             onMouseEnter={() =>
               setCursor && setCursor("navigation", { direction: "right" })
@@ -328,7 +330,7 @@ export default function CreateStory() {
             onMouseLeave={handleMouseLeave}
           >
             {isPublishing ? (
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="h-4 w-4 border-2 border-foreground border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
                 <span className="mr-1.5">Share</span>
@@ -340,7 +342,7 @@ export default function CreateStory() {
 
         {/* Canvas area */}
         <div
-          className="flex-1 relative overflow-hidden bg-gradient-to-b from-gray-900 to-black"
+          className="flex-1 relative overflow-hidden bg-gradient-to-b from-muted to-background"
           onClick={handleCanvasTap}
           onWheel={handleMediaScale}
         >
@@ -435,7 +437,7 @@ export default function CreateStory() {
                       {/* Removed the action buttons */}
                     </div>
                     <button
-                      className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center hover:from-purple-600 hover:to-pink-600 transition-colors"
+                      className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center hover:from-primary/90 hover:to-primary/70 transition-colors"
                       onMouseEnter={() =>
                         setCursor &&
                         setCursor("navigation", { direction: "right" })
@@ -447,9 +449,9 @@ export default function CreateStory() {
                       }}
                     >
                       {isPublishing ? (
-                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="h-5 w-5 border-2 border-foreground border-t-transparent rounded-full animate-spin"></div>
                       ) : (
-                        <Send className="h-5 w-5 text-white" />
+                        <Send className="h-5 w-5 text-foreground" />
                       )}
                     </button>
                   </div>
@@ -458,9 +460,9 @@ export default function CreateStory() {
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center text-gray-400">
+              <div className="text-center text-muted-foreground">
                 <div
-                  className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-800/30 backdrop-blur-sm flex items-center justify-center border border-dashed border-gray-600 hover:bg-gray-700/30 transition-all duration-300 cursor-pointer"
+                  className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/30 backdrop-blur-sm flex items-center justify-center border border-dashed border-border hover:bg-muted/50 transition-all duration-300 cursor-pointer"
                   onMouseEnter={handleUploadHover}
                   onMouseLeave={handleMouseLeave}
                   onClick={() => triggerFileUpload("image")}
@@ -470,7 +472,7 @@ export default function CreateStory() {
                 <p className="text-base font-medium">
                   Tap to add photo or video
                 </p>
-                <p className="text-xs text-gray-500 mt-1.5">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   Supported formats: JPG, PNG, MP4
                 </p>
               </div>
@@ -487,12 +489,12 @@ export default function CreateStory() {
         </div>
 
         {/* Tools */}
-        <div className="p-4 bg-black border-t border-gray-800/50">
+        <div className="p-4 bg-background border-t border-border/50">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-gray-900/50 rounded-xl p-0.5 h-10 mb-4">
+            <TabsList className="grid w-full grid-cols-4 bg-muted/50 rounded-xl p-0.5 h-10 mb-4">
               <TabsTrigger
                 value="upload"
-                className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm text-sm font-medium h-full"
+                className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
                 onMouseEnter={handleUploadHover}
                 onMouseLeave={handleMouseLeave}
               >
@@ -501,7 +503,7 @@ export default function CreateStory() {
               </TabsTrigger>
               <TabsTrigger
                 value="camera"
-                className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm text-sm font-medium h-full"
+                className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
                 onMouseEnter={handleCameraHover}
                 onMouseLeave={handleMouseLeave}
                 onClick={() => setShowCamera(true)}
@@ -511,7 +513,7 @@ export default function CreateStory() {
               </TabsTrigger>
               <TabsTrigger
                 value="filters"
-                className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm text-sm font-medium h-full"
+                className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
                 onMouseEnter={handleFilterHover}
                 onMouseLeave={handleMouseLeave}
               >
@@ -520,7 +522,7 @@ export default function CreateStory() {
               </TabsTrigger>
               <TabsTrigger
                 value="text"
-                className="rounded-lg data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm text-sm font-medium h-full"
+                className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
                 onMouseEnter={handleTextToolHover}
                 onMouseLeave={handleMouseLeave}
               >
@@ -533,38 +535,42 @@ export default function CreateStory() {
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   variant="outline"
-                  className="h-32 flex flex-col items-center justify-center gap-3 bg-gray-800/30 border-gray-700/50 hover:bg-gray-700/30 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+                  className="h-32 flex flex-col items-center justify-center gap-3 bg-muted/30 border-border/50 hover:bg-muted/50 rounded-xl transition-all duration-300 hover:scale-[1.02]"
                   onClick={() => triggerFileUpload("image")}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-700/30 flex items-center justify-center">
-                    <Image className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                    <Image className="h-6 w-6 text-foreground" />
                   </div>
-                  <span className="text-white text-sm font-medium">Photo</span>
+                  <span className="text-foreground text-sm font-medium">
+                    Photo
+                  </span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-32 flex flex-col items-center justify-center gap-3 bg-gray-800/30 border-gray-700/50 hover:bg-gray-700/30 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+                  className="h-32 flex flex-col items-center justify-center gap-3 bg-muted/30 border-border/50 hover:bg-muted/50 rounded-xl transition-all duration-300 hover:scale-[1.02]"
                   onClick={() => triggerFileUpload("video")}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-700/30 flex items-center justify-center">
-                    <Video className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                    <Video className="h-6 w-6 text-foreground" />
                   </div>
-                  <span className="text-white text-sm font-medium">Video</span>
+                  <span className="text-foreground text-sm font-medium">
+                    Video
+                  </span>
                 </Button>
               </div>
             </TabsContent>
 
             <TabsContent value="camera" className="mt-0 space-y-4">
-              <div className="text-center text-gray-400">
+              <div className="text-center text-muted-foreground">
                 <p className="text-base font-medium mb-2">
                   Record a video for your story
                 </p>
-                <p className="text-xs text-gray-500 mb-4">
+                <p className="text-xs text-muted-foreground mb-4">
                   Hold the record button to capture video
                 </p>
                 <Button
                   variant="outline"
-                  className="w-full h-12 bg-gray-800/30 border-gray-700/50 hover:bg-gray-700/30 rounded-xl transition-all duration-300"
+                  className="w-full h-12 bg-muted/30 border-border/50 hover:bg-muted/50 rounded-xl transition-all duration-300"
                   onClick={() => setShowCamera(true)}
                 >
                   <Camera className="h-5 w-5 mr-2" />
@@ -588,7 +594,7 @@ export default function CreateStory() {
                     <div
                       className={`w-16 h-16 rounded-xl overflow-hidden mb-2 ${
                         selectedFilter === filter.class
-                          ? "ring-2 ring-white"
+                          ? "ring-2 ring-foreground"
                           : ""
                       }`}
                     >
@@ -614,7 +620,7 @@ export default function CreateStory() {
                         </div>
                       )}
                     </div>
-                    <span className="text-xs text-white font-medium">
+                    <span className="text-xs text-foreground font-medium">
                       {filter.icon} {filter.name}
                     </span>
                   </button>
@@ -628,11 +634,11 @@ export default function CreateStory() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Type something..."
-                  className="bg-gray-800/30 border-gray-700/50 text-white placeholder:text-gray-500 rounded-xl text-sm h-10 pr-10"
+                  className="bg-muted/30 border-border/50 text-foreground placeholder:text-muted-foreground rounded-xl text-sm h-10 pr-10"
                 />
                 {text && (
                   <button
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => setText("")}
                   >
                     <X className="h-4 w-4" />
@@ -642,10 +648,12 @@ export default function CreateStory() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-white text-xs font-medium">
+                  <Label className="text-foreground text-xs font-medium">
                     Text Size
                   </Label>
-                  <span className="text-gray-400 text-xs">{fontSize}px</span>
+                  <span className="text-muted-foreground text-xs">
+                    {fontSize}px
+                  </span>
                 </div>
                 <Slider
                   value={[fontSize]}
@@ -653,17 +661,17 @@ export default function CreateStory() {
                   max={72}
                   step={1}
                   onValueChange={(value) => setFontSize(value[0])}
-                  className="[&>span]:bg-white"
+                  className="[&>span]:bg-foreground"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-white text-xs font-medium">
+                  <Label className="text-foreground text-xs font-medium">
                     Text Style
                   </Label>
                   <button
-                    className="text-xs text-blue-400 flex items-center"
+                    className="text-xs text-primary flex items-center"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowTextStyles(!showTextStyles);
@@ -674,15 +682,15 @@ export default function CreateStory() {
                 </div>
 
                 {showTextStyles && (
-                  <div className="grid grid-cols-2 gap-2 mt-2 bg-gray-800/80 backdrop-blur-sm p-2 rounded-lg border border-gray-700/50 animate-fade-in">
+                  <div className="grid grid-cols-2 gap-2 mt-2 bg-muted/80 backdrop-blur-sm p-2 rounded-lg border border-border/50 animate-fade-in">
                     {TEXT_STYLES.map((style) => (
                       <button
                         key={style.name}
                         onClick={() => setTextStyle(style.class)}
                         className={`p-2 rounded-lg text-center transition-all ${
                           textStyle === style.class
-                            ? "bg-gray-700 text-white"
-                            : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50"
+                            ? "bg-muted text-foreground"
+                            : "bg-muted/50 text-muted-foreground hover:bg-muted/50"
                         } ${style.class}`}
                       >
                         {style.name}
@@ -694,11 +702,11 @@ export default function CreateStory() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-white text-xs font-medium">
+                  <Label className="text-foreground text-xs font-medium">
                     Text Color
                   </Label>
                   <button
-                    className="w-5 h-5 rounded-full border border-white/30"
+                    className="w-5 h-5 rounded-full border border-foreground/30"
                     style={{ backgroundColor: textColor }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -708,7 +716,7 @@ export default function CreateStory() {
                 </div>
 
                 {showColorPicker && (
-                  <div className="bg-gray-800/80 backdrop-blur-sm p-2 rounded-lg border border-gray-700/50 animate-fade-in">
+                  <div className="bg-muted/80 backdrop-blur-sm p-2 rounded-lg border border-border/50 animate-fade-in">
                     <div className="grid grid-cols-6 gap-2">
                       {[
                         "#ffffff",
@@ -729,7 +737,7 @@ export default function CreateStory() {
                           onClick={() => setTextColor(color)}
                           className={`w-8 h-8 rounded-full transition-all duration-200 ${
                             textColor === color
-                              ? "ring-2 ring-white scale-110"
+                              ? "ring-2 ring-foreground scale-110"
                               : "hover:scale-105"
                           }`}
                           style={{ backgroundColor: color }}
@@ -737,8 +745,8 @@ export default function CreateStory() {
                       ))}
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-gray-400" />
-                      <span className="text-xs text-gray-400">
+                      <Palette className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
                         Tap a color to select it
                       </span>
                     </div>
@@ -746,7 +754,7 @@ export default function CreateStory() {
                 )}
               </div>
 
-              <p className="text-gray-400 text-xs text-center mt-2">
+              <p className="text-muted-foreground text-xs text-center mt-2">
                 Drag to move text • Double tap to edit
               </p>
             </TabsContent>

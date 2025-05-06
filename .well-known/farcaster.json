@@ -6,13 +6,30 @@
   },
   "frame": {
     "version": "1",
-    "name": "Example Frame",
-    "iconUrl": "https://fary-story.netlify.app/icon.png",
-    "homeUrl": "https://fary-story.netlify.app",
-    "imageUrl": "https://fary-story.netlify.app/image.png",
-    "buttonTitle": "Check this out",
-    "splashImageUrl": "https://fary-story.netlify.app/splash.png",
-    "splashBackgroundColor": "#eeccff",
-    "webhookUrl": "https://fary-story.netlify.app/api/webhook"
+    "name": "Rewards",
+    "iconUrl": "https://rewards.warpcast.com/app.png",
+    "splashImageUrl": "https://rewards.warpcast.com/logo.png",
+    "splashBackgroundColor": "#000000",
+    "homeUrl": "https://rewards.warpcast.com",
+    "webhookUrl": "https://client.warpcast.com/v1/creator-rewards-notifs-webhook",
+    "subtitle": "Top Warpcast creators",
+    "description": "Climb the leaderboard and earn rewards by being active on Warpcast.",
+    "screenshotUrls": [
+      "https://rewards.warpcast.com/screenshot1.png",
+      "https://rewards.warpcast.com/screenshot2.png",
+      "https://rewards.warpcast.com/screenshot3.png"
+    ],
+    "primaryCategory": "social",
+    "tags": [
+      "rewards",
+      "leaderboard",
+      "warpcast",
+      "earn"
+    ],
+    "heroImageUrl": "https://rewards.warpcast.com/og.png",
+    "tagline": "Top Warpcast creators",
+    "ogTitle": "Rewards",
+    "ogDescription": "Climb the leaderboard and earn rewards by being active on Warpcast.",
+    "ogImageUrl": "https://rewards.warpcast.com/og.png"
   }
 }

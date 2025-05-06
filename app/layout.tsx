@@ -14,23 +14,23 @@ const inter = Inter({ subsets: ["latin"] });
 // Farcaster frame configuration
 const frame = {
   version: "next",
-  imageUrl: "https://dtech.vision/frame-thumbnail.png",
+  imageUrl: "https://indigo-obedient-wombat-704.mypinata.cloud/files/bafkreibotb7d5rzs2tzdg5n3jilgk5wjsd5p642pscuokf53xq62gquxp4?X-Algorithm=PINATA1&X-Date=1746511473&X-Expires=30&X-Method=GET&X-Signature=81ee5bc58d7ad25344bafc0648dd46ee30bf3090d0871553626d22d157421cb6",
   button: {
-    title: "Learn Farcaster",
+    title: "Farcaster stories",
     action: {
       type: "launch_frame",
-      name: "dTech - Farcaster Boutique",
-      url: "https://dtech.vision/farcaster/",
-      splashImageUrl: "https://dtech.vision/icon.png",
+      name: "Fary Story",
+      url: "https://fary-story.netlify.app/",
+      splashImageUrl: "https://indigo-obedient-wombat-704.mypinata.cloud/files/bafkreibotb7d5rzs2tzdg5n3jilgk5wjsd5p642pscuokf53xq62gquxp4?X-Algorithm=PINATA1&X-Date=1746511473&X-Expires=30&X-Method=GET&X-Signature=81ee5bc58d7ad25344bafc0648dd46ee30bf3090d0871553626d22d157421cb6",
       splashBackgroundColor: "#f7f7f7",
     },
   },
 };
 
 export const metadata: Metadata = {
-  title: "StoryGram - Instagram-like Stories App",
-  description: "Create and share stories with text and filters",
-  generator: "v0.dev",
+  title: "Fary Story",
+  description: "Create and share stories on miniapp",
+  generator: "Fary Story",
   other: {
     "fc:frame": JSON.stringify(frame),
   },
@@ -42,11 +42,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="fc:frame" content={JSON.stringify(frame)} />
       </head>
-      <body className={`${inter.className} bg-gray-100 min-h-screen`}>
+      <body className={`${inter.className} min-h-screen bg-background`}>
         <Providers>
           <div className="flex justify-center items-center min-h-screen">
             {children}
