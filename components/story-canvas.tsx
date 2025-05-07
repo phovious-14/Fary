@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { VideoStory } from "./video-story";
 import Draggable from "react-draggable";
+import { cn } from "@/lib/utils";
+import React from "react";
 
 interface StoryCanvasProps {
   mediaUrl: string;
@@ -22,10 +24,20 @@ interface StoryCanvasProps {
   loop?: boolean;
   muted?: boolean;
   controls?: boolean;
-  isPaused?: boolean;
   mediaPosition?: { x: number; y: number };
   mediaScale?: number;
   notDraggable?: boolean;
+  isPaused?: boolean;
+  onMediaPositionChange?: (position: { x: number; y: number }) => void;
+  onMediaScaleChange?: (scale: number) => void;
+  stickers?: Array<{
+    id: string;
+    url: string;
+    position: { x: number; y: number };
+    scale: number;
+    mediaType?: "image" | "video";
+    mediaUrl?: string;
+  }>;
 }
 
 export function StoryCanvas({
@@ -51,14 +63,50 @@ export function StoryCanvas({
   mediaPosition = { x: 0, y: 0 },
   mediaScale = 1,
   notDraggable,
+  onMediaPositionChange,
+  onMediaScaleChange,
+  stickers = [],
 }: StoryCanvasProps) {
+  console.log("StoryCanvas received props:", {
+    mediaUrl,
+    mediaType,
+    stickers,
+  });
+
   const mediaContainerRef = useRef<HTMLElement>(null!);
   const textContainerRef = useRef<HTMLElement>(null!);
   const [scale, setScale] = useState(mediaScale);
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState(mediaPosition);
+  const stickerRefs = useRef<{
+    [key: string]: React.RefObject<HTMLDivElement>;
+  }>({});
+
+  // Initialize sticker refs
+  useEffect(() => {
+    console.log("Initializing sticker refs for:", stickers);
+    stickers.forEach((sticker) => {
+      if (!stickerRefs.current[sticker.id]) {
+        stickerRefs.current[sticker.id] = React.createRef<HTMLDivElement>();
+      }
+    });
+  }, [stickers]);
 
   const handleDrag = (e: any, data: { x: number; y: number }) => {
     if (onTextPositionChange) {
       onTextPositionChange({ x: data.x, y: data.y });
+    }
+  };
+
+  const handleMediaDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleMediaDragStop = (e: any, data: { x: number; y: number }) => {
+    setIsDragging(false);
+    setPosition({ x: data.x, y: data.y });
+    if (onMediaPositionChange) {
+      onMediaPositionChange({ x: data.x, y: data.y });
     }
   };
 
@@ -67,87 +115,79 @@ export function StoryCanvas({
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const newScale = Math.max(0.5, Math.min(3, scale * delta));
     setScale(newScale);
+    if (onMediaScaleChange) {
+      onMediaScaleChange(newScale);
+    }
   };
 
-  if (mediaType === "video") {
-    return (
-      <div className="w-full h-full relative bg-black overflow-hidden">
-        {!notDraggable ? (
-          <Draggable
-            bounds="parent"
-            nodeRef={mediaContainerRef}
-            defaultClassName="cursor-move"
-            position={mediaPosition}
-          >
-            <div
-              ref={mediaContainerRef as React.RefObject<HTMLDivElement>}
-              className="w-full h-full relative"
-              style={{ transform: `scale(${scale})` }}
-            >
-              <VideoStory
-                mediaUrl={mediaUrl}
-                onTimeUpdate={onTimeUpdate}
-                onEnded={onEnded}
-                onError={onError}
-                autoPlay={autoPlay}
-                loop={loop}
-                muted={muted}
-                controls={controls}
-                isPaused={isPaused}
-              />
-            </div>
-          </Draggable>
-        ) : (
-          <div
-            className="absolute"
-            style={{
-              transform: `scale(${scale})`,
-              left: `${mediaPosition.x}px`,
-              top: `${mediaPosition.y}px`,
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            <VideoStory
-              mediaUrl={mediaUrl}
-              onTimeUpdate={onTimeUpdate}
-              onEnded={onEnded}
-              onError={onError}
-              autoPlay={autoPlay}
-              loop={loop}
-              muted={muted}
-              controls={controls}
-              isPaused={isPaused}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
+  // Update scale when mediaScale prop changes
+  useEffect(() => {
+    setScale(mediaScale);
+  }, [mediaScale]);
 
-  console.log("isPaused", notDraggable);
+  useEffect(() => {
+    setPosition(mediaPosition);
+  }, [mediaPosition]);
+
+  const renderMedia = (
+    url: string,
+    type: "image" | "video",
+    isSticker: boolean = false
+  ) => {
+    if (type === "video") {
+      return (
+        <VideoStory
+          mediaUrl={url}
+          onTimeUpdate={onTimeUpdate}
+          onEnded={onEnded}
+          onError={onError}
+          autoPlay={autoPlay}
+          loop={loop}
+          muted={muted}
+          controls={controls}
+          isPaused={isPaused}
+        />
+      );
+    }
+    return (
+      <img
+        src={url}
+        alt={isSticker ? "sticker" : "Story content"}
+        className={cn(
+          `w-full h-full object-contain transition-opacity duration-200`,
+          isDragging ? "opacity-90" : "opacity-100",
+          filter || ""
+        )}
+        onWheel={handleWheel}
+        draggable={false}
+      />
+    );
+  };
 
   return (
     <div className="relative w-full h-full overflow-hidden p-8">
       {!notDraggable ? (
         <Draggable
-          bounds="parent"
           nodeRef={mediaContainerRef}
-          defaultClassName="cursor-move"
-          position={mediaPosition}
+          position={position}
+          onStart={handleMediaDragStart}
+          onStop={handleMediaDragStop}
+          grid={[1, 1]}
         >
           <div
             ref={mediaContainerRef as React.RefObject<HTMLDivElement>}
-            className="w-full h-full relative"
-            style={{ transform: `scale(${scale})` }}
+            className={cn(
+              "w-full h-full relative transition-transform duration-100",
+              isDragging ? "scale-[1.02]" : "scale-100"
+            )}
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: "center",
+              touchAction: "none",
+              willChange: "transform",
+            }}
           >
-            <img
-              src={mediaUrl}
-              alt="Story content"
-              className={`w-full h-full object-contain ${filter || ""}`}
-              onWheel={handleWheel}
-              draggable={false}
-            />
+            {renderMedia(mediaUrl, mediaType)}
           </div>
         </Draggable>
       ) : (
@@ -155,55 +195,105 @@ export function StoryCanvas({
           className="absolute"
           style={{
             transform: `scale(${scale})`,
-            left: `${mediaPosition.x}px`,
-            top: `${mediaPosition.y}px`,
+            left: `${position.x}px`,
+            top: `${position.y}px`,
             width: "100%",
             height: "100%",
           }}
         >
-          <img
-            src={mediaUrl}
-            alt="Story content"
-            className={`w-full h-full object-contain ${filter || ""}`}
-            onWheel={handleWheel}
-            draggable={false}
-          />
+          {renderMedia(mediaUrl, mediaType)}
         </div>
       )}
 
-      {text &&
-        (!notDraggable ? (
-          <Draggable
-            position={textPosition}
-            onDrag={handleDrag}
-            bounds="parent"
-            nodeRef={textContainerRef}
-            defaultClassName="absolute cursor-move"
-          >
-            <div
-              ref={textContainerRef as React.RefObject<HTMLDivElement>}
-              style={{
-                color: textColor,
-                fontSize: `${fontSize}px`,
-                fontFamily: textStyle,
-                textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-                userSelect: "none",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                maxWidth: "90%",
-                textAlign: "center",
-                padding: "1rem",
-              }}
-            >
-              {text}
-            </div>
-          </Draggable>
-        ) : (
+      {/* Render Stickers */}
+      {stickers && stickers.length > 0 && (
+        <div className="absolute inset-0 pointer-events-none">
+          {stickers.map((sticker) => {
+            console.log("Rendering sticker with data:", {
+              id: sticker.id,
+              url: sticker.url,
+              mediaType: sticker.mediaType,
+              mediaUrl: sticker.mediaUrl,
+              position: sticker.position,
+              scale: sticker.scale,
+            });
+
+            const ref =
+              stickerRefs.current[sticker.id] ||
+              React.createRef<HTMLDivElement>();
+            if (!stickerRefs.current[sticker.id]) {
+              stickerRefs.current[sticker.id] = ref;
+            }
+
+            return (
+              <Draggable
+                key={sticker.id}
+                nodeRef={ref}
+                position={sticker.position}
+                grid={[1, 1]}
+              >
+                <div
+                  ref={ref}
+                  className="absolute cursor-move z-50 pointer-events-auto"
+                  style={{
+                    transform: `scale(${sticker.scale})`,
+                    transformOrigin: "center",
+                    touchAction: "none",
+                    willChange: "transform",
+                    left: sticker.position.x,
+                    top: sticker.position.y,
+                    width: "100px",
+                    height: "100px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {sticker.mediaType && sticker.mediaUrl ? (
+                    <div className="w-full h-full">
+                      {renderMedia(sticker.mediaUrl, sticker.mediaType, true)}
+                    </div>
+                  ) : (
+                    <img
+                      src={sticker.url}
+                      alt="sticker"
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                      onError={(e) => {
+                        console.error(
+                          "Error loading sticker image:",
+                          sticker.url
+                        );
+                        e.currentTarget.style.display = "none";
+                      }}
+                      onLoad={() => {
+                        console.log(
+                          "Sticker image loaded successfully:",
+                          sticker.url
+                        );
+                      }}
+                    />
+                  )}
+                </div>
+              </Draggable>
+            );
+          })}
+        </div>
+      )}
+
+      {text && (
+        <Draggable
+          position={textPosition}
+          onDrag={handleDrag}
+          bounds="parent"
+          nodeRef={textContainerRef}
+          defaultPosition={textPosition}
+          grid={[1, 1]}
+        >
           <div
+            ref={textContainerRef as React.RefObject<HTMLDivElement>}
+            className="absolute cursor-move transition-transform duration-100"
             style={{
-              position: "absolute",
-              left: `${textPosition.x}px`,
-              top: `${textPosition.y}px`,
               color: textColor,
               fontSize: `${fontSize}px`,
               fontFamily: textStyle,
@@ -214,11 +304,14 @@ export function StoryCanvas({
               maxWidth: "90%",
               textAlign: "center",
               padding: "1rem",
+              touchAction: "none",
+              willChange: "transform",
             }}
           >
             {text}
           </div>
-        ))}
+        </Draggable>
+      )}
     </div>
   );
 }

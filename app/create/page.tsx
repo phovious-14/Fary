@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +55,14 @@ const TEXT_STYLES = [
   { name: "Elegant", class: "font-serif italic" },
 ];
 
+interface Sticker {
+  id: string;
+  url: string;
+  position: { x: number; y: number };
+  scale: number;
+  isDragging: boolean;
+}
+
 export default function CreateStory() {
   const router = useRouter();
   const cursorContext = useCursor();
@@ -85,6 +91,59 @@ export default function CreateStory() {
   const [isDragging, setIsDragging] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
+  const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [availableStickers, setAvailableStickers] = useState<
+    Array<{ id: string; url: string; name: string }>
+  >([]);
+  const stickerRefs = useRef<{
+    [key: string]: React.RefObject<HTMLDivElement>;
+  }>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Add this effect to fetch stickers
+  useEffect(() => {
+    const fetchStickers = async () => {
+      try {
+        const response = await fetch("/api/stickers");
+        if (!response.ok) throw new Error("Failed to fetch stickers");
+        const data = await response.json();
+        console.log("Fetched stickers data:", data); // Debug log
+        setAvailableStickers(data);
+      } catch (error) {
+        console.error("Error fetching stickers:", error);
+      }
+    };
+
+    fetchStickers();
+  }, []);
+
+  // Add this function to handle sticker selection
+  const handleStickerSelect = (sticker: {
+    id: string;
+    url: string;
+    name: string;
+  }) => {
+    console.log("Adding new sticker:", sticker); // Debug log
+
+    const newSticker: Sticker = {
+      id: Math.random().toString(36).substr(2, 9),
+      url: sticker.url,
+      position: { x: 100, y: 100 }, // Set initial position in the center
+      scale: 1,
+      isDragging: false,
+    };
+
+    console.log("Created new sticker object:", newSticker); // Debug log
+    setStickers((prevStickers) => {
+      const updatedStickers = [...prevStickers, newSticker];
+      console.log("Updated stickers array:", updatedStickers); // Debug log
+      return updatedStickers;
+    });
+
+    if (!stickerRefs.current[newSticker.id]) {
+      stickerRefs.current[newSticker.id] = React.createRef<HTMLDivElement>();
+    }
+  };
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,6 +229,8 @@ export default function CreateStory() {
         `https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`
       );
 
+      console.log("Current stickers before saving:", stickers);
+
       const story = {
         userId: "1", // Adding a default userId for now
         type: mediaType,
@@ -182,9 +243,17 @@ export default function CreateStory() {
         textStyle: textStyle,
         mediaPosition: mediaPosition,
         mediaScale: mediaScale,
+        stickers: stickers.map((sticker) => ({
+          id: sticker.id,
+          url: sticker.url,
+          position: sticker.position,
+          scale: sticker.scale,
+        })),
       };
 
-      await saveStory(story);
+      console.log("Saving story with data:", story);
+      const savedStory = await saveStory(story);
+      console.log("Saved story:", savedStory);
 
       // Show success animation
       router.push("/");
@@ -229,10 +298,6 @@ export default function CreateStory() {
 
   const handleFilterHover = () => {
     if (setCursor) setCursor("color");
-  };
-
-  const handleUploadHover = () => {
-    if (setCursor) setCursor("sticker");
   };
 
   const handleCameraHover = () => {
@@ -280,14 +345,105 @@ export default function CreateStory() {
   };
 
   const handleMediaDragStop = (e: any, data: { x: number; y: number }) => {
-    setIsMediaDragging(false);
+    // Get container bounds
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const mediaElement = mediaRef.current;
+    if (!mediaElement) return;
+
+    const mediaRect = mediaElement.getBoundingClientRect();
+
+    // Calculate bounds
+    const maxX = containerRect.width - mediaRect.width;
+    const maxY = containerRect.height - mediaRect.height;
+
+    // Constrain position within container
+    const constrainedX = Math.max(0, Math.min(data.x, maxX));
+    const constrainedY = Math.max(0, Math.min(data.y, maxY));
+
     setMediaPosition({ x: data.x, y: data.y });
+    setIsMediaDragging(false);
   };
 
   const handleMediaScale = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     setMediaScale((prev) => Math.min(Math.max(prev * delta, 0.5), 2));
+  };
+
+  // Handle sticker upload
+  const handleStickerDragStart = (id: string) => {
+    setStickers(
+      stickers.map((sticker) =>
+        sticker.id === id ? { ...sticker, isDragging: true } : sticker
+      )
+    );
+  };
+
+  const handleStickerDragStop = (
+    id: string,
+    e: any,
+    data: { x: number; y: number }
+  ) => {
+    // Get container bounds
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const stickerElement = stickerRefs.current[id]?.current;
+    if (!stickerElement) return;
+
+    const stickerRect = stickerElement.getBoundingClientRect();
+
+    // Calculate bounds
+    const maxX = containerRect.width - stickerRect.width;
+    const maxY = containerRect.height - stickerRect.height;
+
+    // Constrain position within container
+    const constrainedX = Math.max(0, Math.min(data.x, maxX));
+    const constrainedY = Math.max(0, Math.min(data.y, maxY));
+
+    // Update sticker position
+    setStickers(
+      stickers.map((sticker) =>
+        sticker.id === id
+          ? {
+              ...sticker,
+              position: { x: constrainedX, y: constrainedY },
+              isDragging: false,
+            }
+          : sticker
+      )
+    );
+  };
+
+  const handleStickerScale = (id: string, e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setStickers(
+      stickers.map((sticker) =>
+        sticker.id === id
+          ? {
+              ...sticker,
+              scale: Math.min(Math.max(sticker.scale * delta, 0.5), 2),
+            }
+          : sticker
+      )
+    );
+  };
+
+  const removeSticker = (id: string) => {
+    setStickers(stickers.filter((sticker) => sticker.id !== id));
+  };
+
+  const handleMediaPositionChange = (position: { x: number; y: number }) => {
+    setMediaPosition(position);
+  };
+
+  const handleMediaScaleChange = (scale: number) => {
+    setMediaScale(scale);
   };
 
   return (
@@ -342,6 +498,7 @@ export default function CreateStory() {
 
         {/* Canvas area */}
         <div
+          ref={containerRef}
           className="flex-1 relative overflow-hidden bg-gradient-to-b from-muted to-background"
           onClick={handleCanvasTap}
           onWheel={handleMediaScale}
@@ -359,19 +516,30 @@ export default function CreateStory() {
                 position={mediaPosition}
                 onStart={handleMediaDragStart}
                 onStop={handleMediaDragStop}
+                bounds="parent"
+                grid={[1, 1]}
+                defaultPosition={{ x: 0, y: 0 }}
               >
                 <div
                   ref={mediaRef}
-                  className="absolute cursor-move"
+                  className={cn(
+                    "absolute cursor-move transition-transform duration-100",
+                    isMediaDragging ? "scale-[1.02]" : "scale-100"
+                  )}
                   style={{
                     transform: `scale(${mediaScale})`,
                     transformOrigin: "center",
+                    touchAction: "none",
+                    willChange: "transform",
                   }}
                 >
                   {mediaType === "video" ? (
                     <video
                       src={mediaPreview}
-                      className="w-full h-full object-contain"
+                      className={cn(
+                        "w-full h-full object-contain transition-opacity duration-200",
+                        isMediaDragging ? "opacity-90" : "opacity-100"
+                      )}
                       autoPlay
                       loop
                       muted
@@ -401,10 +569,70 @@ export default function CreateStory() {
                       mediaPosition={mediaPosition}
                       mediaScale={mediaScale}
                       notDraggable={false}
+                      onMediaPositionChange={handleMediaPositionChange}
+                      onMediaScaleChange={handleMediaScaleChange}
+                      stickers={stickers}
                     />
                   )}
                 </div>
               </Draggable>
+
+              {/* Render Stickers */}
+              {stickers.map((sticker) => {
+                console.log("Rendering sticker:", sticker);
+                return (
+                  <Draggable
+                    key={sticker.id}
+                    nodeRef={stickerRefs.current[sticker.id]}
+                    position={sticker.position}
+                    onStart={() => handleStickerDragStart(sticker.id)}
+                    onStop={(e, data) =>
+                      handleStickerDragStop(sticker.id, e, data)
+                    }
+                    bounds="parent"
+                    grid={[1, 1]}
+                    defaultPosition={{ x: 0, y: 0 }}
+                  >
+                    <div
+                      ref={stickerRefs.current[sticker.id]}
+                      className={cn(
+                        "absolute cursor-move z-50 transition-transform duration-100",
+                        sticker.isDragging ? "scale-105" : "scale-100"
+                      )}
+                      onWheel={(e) => handleStickerScale(sticker.id, e)}
+                      style={{
+                        transform: `scale(${sticker.scale})`,
+                        transformOrigin: "center",
+                        touchAction: "none",
+                        willChange: "transform",
+                      }}
+                    >
+                      <div className="relative group">
+                        <img
+                          src={sticker.url}
+                          alt="sticker"
+                          className={cn(
+                            "max-w-[100px] max-h-[100px] object-contain pointer-events-none transition-opacity duration-200",
+                            sticker.isDragging ? "opacity-80" : "opacity-100"
+                          )}
+                          draggable={false}
+                        />
+                        <button
+                          className={cn(
+                            "absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center transition-all duration-200",
+                            sticker.isDragging
+                              ? "opacity-0"
+                              : "opacity-0 group-hover:opacity-100"
+                          )}
+                          onClick={() => removeSticker(sticker.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </Draggable>
+                );
+              })}
 
               {/* Draggable Text Element */}
               {text && (
@@ -463,7 +691,7 @@ export default function CreateStory() {
               <div className="text-center text-muted-foreground">
                 <div
                   className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/30 backdrop-blur-sm flex items-center justify-center border border-dashed border-border hover:bg-muted/50 transition-all duration-300 cursor-pointer"
-                  onMouseEnter={handleUploadHover}
+                  onMouseEnter={handleTextToolHover}
                   onMouseLeave={handleMouseLeave}
                   onClick={() => triggerFileUpload("image")}
                 >
@@ -495,7 +723,7 @@ export default function CreateStory() {
               <TabsTrigger
                 value="upload"
                 className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
-                onMouseEnter={handleUploadHover}
+                onMouseEnter={handleTextToolHover}
                 onMouseLeave={handleMouseLeave}
               >
                 <Upload className="h-3.5 w-3.5 mr-1.5" />
@@ -521,13 +749,13 @@ export default function CreateStory() {
                 Filters
               </TabsTrigger>
               <TabsTrigger
-                value="text"
+                value="stickers"
                 className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
                 onMouseEnter={handleTextToolHover}
                 onMouseLeave={handleMouseLeave}
               >
-                <Type className="h-3.5 w-3.5 mr-1.5" />
-                Text
+                <Sticker className="h-3.5 w-3.5 mr-1.5" />
+                Stickers
               </TabsTrigger>
             </TabsList>
 
@@ -625,6 +853,35 @@ export default function CreateStory() {
                     </span>
                   </button>
                 ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="stickers" className="mt-0 space-y-4">
+              <div className="grid grid-cols-4 gap-4">
+                {availableStickers.map((sticker) => (
+                  <button
+                    key={sticker.id}
+                    onClick={() => handleStickerSelect(sticker)}
+                    className="h-24 flex flex-col items-center justify-center gap-2 bg-muted/30 border border-border/50 hover:bg-muted/50 rounded-xl transition-all duration-300 hover:scale-[1.02] p-2"
+                  >
+                    <img
+                      src={sticker.url}
+                      alt={sticker.name}
+                      className="w-12 h-12 object-contain"
+                    />
+                    <span className="text-xs text-foreground font-medium text-center">
+                      {sticker.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="h-24 flex flex-col items-center justify-center gap-2 bg-muted/30 border border-border/50 rounded-xl p-4">
+                <p className="text-foreground text-sm font-medium text-center">
+                  Click a sticker to add it to your story
+                </p>
+                <p className="text-muted-foreground text-xs text-center">
+                  Drag to position and use mouse wheel to resize
+                </p>
               </div>
             </TabsContent>
 

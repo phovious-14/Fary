@@ -12,6 +12,12 @@ export interface Story {
   tags?: string[];
   mediaPosition: { x: number; y: number };
   mediaScale: number;
+  stickers?: Array<{
+    id: string;
+    url: string;
+    position: { x: number; y: number };
+    scale: number;
+  }>;
 }
 
 export interface UserStories {

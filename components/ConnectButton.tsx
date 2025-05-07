@@ -8,7 +8,7 @@ export default function ConnectButton() {
  
   if (isConnected) {
     return (
-      <div className="flex flex-col gap-2 text-black">
+      <div className="flex flex-col gap-2 text-white text-xs">
         <div>You're connected!</div>
         <div>Address: {address}</div>
       </div>

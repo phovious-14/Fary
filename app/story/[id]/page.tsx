@@ -31,6 +31,44 @@ export default function StoryPage({
   const [videoError, setVideoError] = useState<string | null>(null);
   const [mediaPosition, setMediaPosition] = useState({ x: 0, y: 0 });
   const [mediaScale, setMediaScale] = useState(1);
+  const [stickers, setStickers] = useState<
+    Array<{
+      id: string;
+      url: string;
+      position: { x: number; y: number };
+      scale: number;
+    }>
+  >([]);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [mediaItems, setMediaItems] = useState<
+    Array<{
+      url: string;
+      type: "image" | "video";
+      filter?: string;
+      text?: string;
+      textPosition?: { x: number; y: number };
+      textColor?: string;
+      fontSize?: number;
+      mediaPosition?: { x: number; y: number };
+      mediaScale?: number;
+      stickers?: Array<{
+        id: string;
+        url: string;
+        position: { x: number; y: number };
+        scale: number;
+      }>;
+    }>
+  >([]);
+
+  // Function to process sticker URL
+  const processStickerUrl = (url: string) => {
+    // If the URL starts with /, it's a local path
+    if (url.startsWith("/")) {
+      return url;
+    }
+    // If it's a remote URL, return as is
+    return url;
+  };
 
   // Load story data
   useEffect(() => {
@@ -39,14 +77,45 @@ export default function StoryPage({
       const storyData = getStoryById(storyId);
       console.log("Story ID:", storyId);
       console.log("Found story:", storyData);
+      console.log("Story stickers:", storyData?.stickers);
 
       if (storyData) {
         setStory(storyData);
-        setTextPosition(storyData.textPosition || { x: 50, y: 50 });
-        setFontSize(storyData.fontSize || 24);
-        setTextColor(storyData.textColor || "#ffffff");
-        setMediaPosition(storyData.mediaPosition || { x: 0, y: 0 });
-        setMediaScale(storyData.mediaScale || 1);
+        // Convert single story to media items array
+        const processedStickers =
+          storyData.stickers?.map((sticker: any) => {
+            console.log("Processing sticker:", sticker);
+            const processed = {
+              ...sticker,
+              url: processStickerUrl(sticker.url),
+              position: sticker.position || { x: 50, y: 50 },
+              scale: sticker.scale || 1,
+              mediaType: sticker.mediaType || "image",
+              mediaUrl: sticker.mediaUrl
+                ? processStickerUrl(sticker.mediaUrl)
+                : undefined,
+            };
+            console.log("Processed sticker:", processed);
+            return processed;
+          }) || [];
+
+        console.log("Final processed stickers:", processedStickers);
+
+        const mediaItem = {
+          url: storyData.url,
+          type: storyData.type,
+          filter: storyData.filter,
+          text: storyData.text,
+          textPosition: storyData.textPosition,
+          textColor: storyData.textColor,
+          fontSize: storyData.fontSize,
+          mediaPosition: storyData.mediaPosition,
+          mediaScale: storyData.mediaScale,
+          stickers: processedStickers,
+        };
+        console.log("Setting media item:", mediaItem);
+        setMediaItems([mediaItem]);
+        setCurrentMediaIndex(0);
       } else {
         console.error("Story not found with ID:", storyId);
       }
@@ -54,14 +123,51 @@ export default function StoryPage({
     }
   }, [storyId, isClient]);
 
+  // Get current media item
+  const currentMedia = mediaItems[currentMediaIndex];
+
+  // Add debug logging for currentMedia
+  useEffect(() => {
+    console.log("Current media item:", currentMedia);
+    console.log("Current media stickers:", currentMedia?.stickers);
+  }, [currentMedia]);
+
   // Update states when story changes
   useEffect(() => {
     if (story) {
       setTextPosition(story.textPosition);
       setFontSize(story.fontSize);
       setTextColor(story.textColor);
+      setStickers(
+        story.stickers?.map(
+          (sticker: {
+            id: string;
+            url: string;
+            position: { x: number; y: number };
+            scale: number;
+          }) => ({
+            ...sticker,
+            url: processStickerUrl(sticker.url),
+          })
+        ) || []
+      );
     }
   }, [story]);
+
+  // Handle media completion
+  const handleMediaComplete = () => {
+    if (currentMediaIndex < mediaItems.length - 1) {
+      // Move to next media item
+      setCurrentMediaIndex((prev) => prev + 1);
+      setProgress(0);
+    } else {
+      // End of story, return to home
+      if (!isNavigatingRef.current) {
+        isNavigatingRef.current = true;
+        router.push("/");
+      }
+    }
+  };
 
   useEffect(() => {
     if (!story && !isLoading) {
@@ -234,7 +340,7 @@ export default function StoryPage({
     );
   }
 
-  if (!story) {
+  if (!currentMedia) {
     return (
       <div className="fixed inset-0 flex justify-center items-center">
         <div className="text-center">
@@ -277,7 +383,7 @@ export default function StoryPage({
           </div>
           <span className="text-white font-medium">Your Story</span>
           <span className="text-gray-300 text-xs">
-            {new Date(story.createdAt).toLocaleTimeString([], {
+            {new Date(story?.createdAt).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -287,25 +393,26 @@ export default function StoryPage({
         {/* Story content */}
         <div className="h-full flex items-center justify-center bg-black overflow-hidden relative">
           <StoryCanvas
-            mediaUrl={story.url}
-            mediaType={story.type}
-            filter={story.filter}
-            text={story.text}
-            textPosition={textPosition}
-            textColor={textColor}
-            fontSize={fontSize}
-            onTextPositionChange={setTextPosition}
+            key={currentMediaIndex} // Force re-render when media changes
+            mediaUrl={currentMedia.url}
+            mediaType={currentMedia.type}
+            filter={currentMedia.filter}
+            text={currentMedia.text}
+            textPosition={currentMedia.textPosition || { x: 50, y: 50 }}
+            textColor={currentMedia.textColor || "#ffffff"}
+            fontSize={currentMedia.fontSize || 24}
             autoPlay={true}
-            loop={true}
+            loop={false} // Don't loop individual media items
             muted={true}
-            controls={true}
+            controls={false}
             onTimeUpdate={handleVideoTimeUpdate}
-            onEnded={handleVideoEnded}
+            onEnded={handleMediaComplete}
             isPaused={isPaused}
             onError={handleVideoError}
-            mediaPosition={mediaPosition}
-            mediaScale={mediaScale}
+            mediaPosition={currentMedia.mediaPosition || { x: 0, y: 0 }}
+            mediaScale={currentMedia.mediaScale || 1}
             notDraggable={true}
+            stickers={currentMedia.stickers || []}
           />
 
           {/* Transparent overlay for touch/mouse events */}

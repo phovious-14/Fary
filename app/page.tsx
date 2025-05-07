@@ -58,7 +58,6 @@ export default function Home() {
   return (
     <main className="mx-auto h-screen max-w-[390px] border-x border-gray-200 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between py-4 px-4 border-b border-slate-200">
-        <h1 className="text-2xl font-bold text-slate-900">StoryGram</h1>
         <ConnectButton />
         <button
           onClick={() => setSearchOpen(true)}
