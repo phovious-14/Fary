@@ -51,12 +51,6 @@ export default function StoryPage({
       fontSize?: number;
       mediaPosition?: { x: number; y: number };
       mediaScale?: number;
-      stickers?: Array<{
-        id: string;
-        url: string;
-        position: { x: number; y: number };
-        scale: number;
-      }>;
     }>
   >([]);
 
@@ -77,30 +71,10 @@ export default function StoryPage({
       const storyData = getStoryById(storyId);
       console.log("Story ID:", storyId);
       console.log("Found story:", storyData);
-      console.log("Story stickers:", storyData?.stickers);
 
       if (storyData) {
         setStory(storyData);
         // Convert single story to media items array
-        const processedStickers =
-          storyData.stickers?.map((sticker: any) => {
-            console.log("Processing sticker:", sticker);
-            const processed = {
-              ...sticker,
-              url: processStickerUrl(sticker.url),
-              position: sticker.position || { x: 50, y: 50 },
-              scale: sticker.scale || 1,
-              mediaType: sticker.mediaType || "image",
-              mediaUrl: sticker.mediaUrl
-                ? processStickerUrl(sticker.mediaUrl)
-                : undefined,
-            };
-            console.log("Processed sticker:", processed);
-            return processed;
-          }) || [];
-
-        console.log("Final processed stickers:", processedStickers);
-
         const mediaItem = {
           url: storyData.url,
           type: storyData.type,
@@ -111,7 +85,6 @@ export default function StoryPage({
           fontSize: storyData.fontSize,
           mediaPosition: storyData.mediaPosition,
           mediaScale: storyData.mediaScale,
-          stickers: processedStickers,
         };
         console.log("Setting media item:", mediaItem);
         setMediaItems([mediaItem]);
@@ -129,7 +102,6 @@ export default function StoryPage({
   // Add debug logging for currentMedia
   useEffect(() => {
     console.log("Current media item:", currentMedia);
-    console.log("Current media stickers:", currentMedia?.stickers);
   }, [currentMedia]);
 
   // Update states when story changes
@@ -393,7 +365,7 @@ export default function StoryPage({
         {/* Story content */}
         <div className="h-full flex items-center justify-center bg-black overflow-hidden relative">
           <StoryCanvas
-            key={currentMediaIndex} // Force re-render when media changes
+            key={currentMediaIndex}
             mediaUrl={currentMedia.url}
             mediaType={currentMedia.type}
             filter={currentMedia.filter}
@@ -401,18 +373,49 @@ export default function StoryPage({
             textPosition={currentMedia.textPosition || { x: 50, y: 50 }}
             textColor={currentMedia.textColor || "#ffffff"}
             fontSize={currentMedia.fontSize || 24}
-            autoPlay={true}
-            loop={false} // Don't loop individual media items
-            muted={true}
-            controls={false}
-            onTimeUpdate={handleVideoTimeUpdate}
+            onTextPositionChange={(position) => {
+              setMediaItems((prev) =>
+                prev.map((item, index) =>
+                  index === currentMediaIndex
+                    ? { ...item, textPosition: position }
+                    : item
+                )
+              );
+            }}
+            onTimeUpdate={(time) => {
+              if (time >= 0.95) {
+                handleMediaComplete();
+              }
+            }}
             onEnded={handleMediaComplete}
-            isPaused={isPaused}
-            onError={handleVideoError}
+            onError={(error) => {
+              console.error("Error playing story:", error);
+              handleMediaComplete();
+            }}
+            autoPlay={true}
+            loop={false}
+            muted={false}
+            controls={false}
             mediaPosition={currentMedia.mediaPosition || { x: 0, y: 0 }}
             mediaScale={currentMedia.mediaScale || 1}
-            notDraggable={true}
-            stickers={currentMedia.stickers || []}
+            onMediaPositionChange={(position) => {
+              setMediaItems((prev) =>
+                prev.map((item, index) =>
+                  index === currentMediaIndex
+                    ? { ...item, mediaPosition: position }
+                    : item
+                )
+              );
+            }}
+            onMediaScaleChange={(scale) => {
+              setMediaItems((prev) =>
+                prev.map((item, index) =>
+                  index === currentMediaIndex
+                    ? { ...item, mediaScale: scale }
+                    : item
+                )
+              );
+            }}
           />
 
           {/* Transparent overlay for touch/mouse events */}

@@ -30,14 +30,6 @@ interface StoryCanvasProps {
   isPaused?: boolean;
   onMediaPositionChange?: (position: { x: number; y: number }) => void;
   onMediaScaleChange?: (scale: number) => void;
-  stickers?: Array<{
-    id: string;
-    url: string;
-    position: { x: number; y: number };
-    scale: number;
-    mediaType?: "image" | "video";
-    mediaUrl?: string;
-  }>;
 }
 
 export function StoryCanvas({
@@ -65,32 +57,17 @@ export function StoryCanvas({
   notDraggable,
   onMediaPositionChange,
   onMediaScaleChange,
-  stickers = [],
 }: StoryCanvasProps) {
   console.log("StoryCanvas received props:", {
     mediaUrl,
     mediaType,
-    stickers,
   });
 
-  const mediaContainerRef = useRef<HTMLElement>(null!);
-  const textContainerRef = useRef<HTMLElement>(null!);
+  const mediaContainerRef = useRef<HTMLDivElement>(null);
+  const textContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(mediaScale);
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(mediaPosition);
-  const stickerRefs = useRef<{
-    [key: string]: React.RefObject<HTMLDivElement>;
-  }>({});
-
-  // Initialize sticker refs
-  useEffect(() => {
-    console.log("Initializing sticker refs for:", stickers);
-    stickers.forEach((sticker) => {
-      if (!stickerRefs.current[sticker.id]) {
-        stickerRefs.current[sticker.id] = React.createRef<HTMLDivElement>();
-      }
-    });
-  }, [stickers]);
 
   const handleDrag = (e: any, data: { x: number; y: number }) => {
     if (onTextPositionChange) {
@@ -129,11 +106,7 @@ export function StoryCanvas({
     setPosition(mediaPosition);
   }, [mediaPosition]);
 
-  const renderMedia = (
-    url: string,
-    type: "image" | "video",
-    isSticker: boolean = false
-  ) => {
+  const renderMedia = (url: string, type: "image" | "video") => {
     if (type === "video") {
       return (
         <VideoStory
@@ -152,7 +125,7 @@ export function StoryCanvas({
     return (
       <img
         src={url}
-        alt={isSticker ? "sticker" : "Story content"}
+        alt="Story content"
         className={cn(
           `w-full h-full object-contain transition-opacity duration-200`,
           isDragging ? "opacity-90" : "opacity-100",
@@ -165,147 +138,44 @@ export function StoryCanvas({
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden p-8">
-      {!notDraggable ? (
-        <Draggable
-          nodeRef={mediaContainerRef}
-          position={position}
-          onStart={handleMediaDragStart}
-          onStop={handleMediaDragStop}
-          grid={[1, 1]}
-        >
-          <div
-            ref={mediaContainerRef as React.RefObject<HTMLDivElement>}
-            className={cn(
-              "w-full h-full relative transition-transform duration-100",
-              isDragging ? "scale-[1.02]" : "scale-100"
-            )}
-            style={{
-              transform: `scale(${scale})`,
-              transformOrigin: "center",
-              touchAction: "none",
-              willChange: "transform",
-            }}
-          >
-            {renderMedia(mediaUrl, mediaType)}
-          </div>
-        </Draggable>
-      ) : (
+    <div
+      className="relative w-full h-full overflow-hidden"
+      style={{ width, height }}
+    >
+      <Draggable
+        nodeRef={mediaContainerRef}
+        position={position}
+        onStart={handleMediaDragStart}
+        onStop={handleMediaDragStop}
+        disabled={notDraggable}
+      >
         <div
-          className="absolute"
+          ref={mediaContainerRef}
+          className="absolute inset-0"
           style={{
             transform: `scale(${scale})`,
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            width: "100%",
-            height: "100%",
+            transformOrigin: "center",
+            touchAction: "none",
+            willChange: "transform",
           }}
         >
           {renderMedia(mediaUrl, mediaType)}
         </div>
-      )}
-
-      {/* Render Stickers */}
-      {stickers && stickers.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none">
-          {stickers.map((sticker) => {
-            console.log("Rendering sticker with data:", {
-              id: sticker.id,
-              url: sticker.url,
-              mediaType: sticker.mediaType,
-              mediaUrl: sticker.mediaUrl,
-              position: sticker.position,
-              scale: sticker.scale,
-            });
-
-            const ref =
-              stickerRefs.current[sticker.id] ||
-              React.createRef<HTMLDivElement>();
-            if (!stickerRefs.current[sticker.id]) {
-              stickerRefs.current[sticker.id] = ref;
-            }
-
-            return (
-              <Draggable
-                key={sticker.id}
-                nodeRef={ref}
-                position={sticker.position}
-                grid={[1, 1]}
-              >
-                <div
-                  ref={ref}
-                  className="absolute cursor-move z-50 pointer-events-auto"
-                  style={{
-                    transform: `scale(${sticker.scale})`,
-                    transformOrigin: "center",
-                    touchAction: "none",
-                    willChange: "transform",
-                    left: sticker.position.x,
-                    top: sticker.position.y,
-                    width: "100px",
-                    height: "100px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {sticker.mediaType && sticker.mediaUrl ? (
-                    <div className="w-full h-full">
-                      {renderMedia(sticker.mediaUrl, sticker.mediaType, true)}
-                    </div>
-                  ) : (
-                    <img
-                      src={sticker.url}
-                      alt="sticker"
-                      className="w-full h-full object-contain pointer-events-none"
-                      draggable={false}
-                      onError={(e) => {
-                        console.error(
-                          "Error loading sticker image:",
-                          sticker.url
-                        );
-                        e.currentTarget.style.display = "none";
-                      }}
-                      onLoad={() => {
-                        console.log(
-                          "Sticker image loaded successfully:",
-                          sticker.url
-                        );
-                      }}
-                    />
-                  )}
-                </div>
-              </Draggable>
-            );
-          })}
-        </div>
-      )}
+      </Draggable>
 
       {text && (
         <Draggable
+          nodeRef={textContainerRef}
           position={textPosition}
           onDrag={handleDrag}
-          bounds="parent"
-          nodeRef={textContainerRef}
-          defaultPosition={textPosition}
-          grid={[1, 1]}
         >
           <div
-            ref={textContainerRef as React.RefObject<HTMLDivElement>}
-            className="absolute cursor-move transition-transform duration-100"
+            ref={textContainerRef}
+            className="absolute cursor-move select-none"
             style={{
               color: textColor,
               fontSize: `${fontSize}px`,
               fontFamily: textStyle,
-              textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-              userSelect: "none",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              maxWidth: "90%",
-              textAlign: "center",
-              padding: "1rem",
-              touchAction: "none",
-              willChange: "transform",
             }}
           >
             {text}

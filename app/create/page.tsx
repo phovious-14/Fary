@@ -15,7 +15,6 @@ import {
   ImageIcon,
   Video,
   Sparkles,
-  Sticker,
   Music,
   Palette,
   X,
@@ -55,14 +54,6 @@ const TEXT_STYLES = [
   { name: "Elegant", class: "font-serif italic" },
 ];
 
-interface Sticker {
-  id: string;
-  url: string;
-  position: { x: number; y: number };
-  scale: number;
-  isDragging: boolean;
-}
-
 export default function CreateStory() {
   const router = useRouter();
   const cursorContext = useCursor();
@@ -91,13 +82,6 @@ export default function CreateStory() {
   const [isDragging, setIsDragging] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
-  const [stickers, setStickers] = useState<Sticker[]>([]);
-  const [availableStickers, setAvailableStickers] = useState<
-    Array<{ id: string; url: string; name: string }>
-  >([]);
-  const stickerRefs = useRef<{
-    [key: string]: React.RefObject<HTMLDivElement>;
-  }>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Add this effect to fetch stickers
@@ -108,7 +92,6 @@ export default function CreateStory() {
         if (!response.ok) throw new Error("Failed to fetch stickers");
         const data = await response.json();
         console.log("Fetched stickers data:", data); // Debug log
-        setAvailableStickers(data);
       } catch (error) {
         console.error("Error fetching stickers:", error);
       }
@@ -116,78 +99,6 @@ export default function CreateStory() {
 
     fetchStickers();
   }, []);
-
-  // Add this function to handle sticker selection
-  const handleStickerSelect = (sticker: {
-    id: string;
-    url: string;
-    name: string;
-  }) => {
-    console.log("Adding new sticker:", sticker); // Debug log
-
-    const newSticker: Sticker = {
-      id: Math.random().toString(36).substr(2, 9),
-      url: sticker.url,
-      position: { x: 100, y: 100 }, // Set initial position in the center
-      scale: 1,
-      isDragging: false,
-    };
-
-    console.log("Created new sticker object:", newSticker); // Debug log
-    setStickers((prevStickers) => {
-      const updatedStickers = [...prevStickers, newSticker];
-      console.log("Updated stickers array:", updatedStickers); // Debug log
-      return updatedStickers;
-    });
-
-    if (!stickerRefs.current[newSticker.id]) {
-      stickerRefs.current[newSticker.id] = React.createRef<HTMLDivElement>();
-    }
-  };
-
-  // Handle file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check if file is an image or video
-    if (file.type.startsWith("image/")) {
-      setMediaType("image");
-    } else if (file.type.startsWith("video/")) {
-      setMediaType("video");
-    } else {
-      // Check file extension for video files
-      const videoExtensions = [
-        ".mp4",
-        ".webm",
-        ".ogg",
-        ".mov",
-        ".avi",
-        ".wmv",
-        ".mkv",
-      ];
-      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
-
-      if (videoExtensions.includes(fileExtension)) {
-        setMediaType("video");
-      } else {
-        alert(
-          "Please select a valid video file (MP4, WebM, OGG, MOV, AVI, WMV, or MKV)"
-        );
-        return;
-      }
-    }
-
-    setMediaFile(file);
-    const fileUrl = URL.createObjectURL(file);
-    setMediaPreview(fileUrl);
-
-    // Move to filters tab after upload
-    setActiveTab("filters");
-
-    // Show action menu
-    setShowActionMenu(true);
-  };
 
   const handlePublish = async () => {
     if (!mediaFile || !mediaType || !mediaPreview) {
@@ -225,12 +136,6 @@ export default function CreateStory() {
         throw new Error("Failed to upload to IPFS");
       }
 
-      console.log(
-        `https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`
-      );
-
-      console.log("Current stickers before saving:", stickers);
-
       const story = {
         userId: "1", // Adding a default userId for now
         type: mediaType,
@@ -243,12 +148,6 @@ export default function CreateStory() {
         textStyle: textStyle,
         mediaPosition: mediaPosition,
         mediaScale: mediaScale,
-        stickers: stickers.map((sticker) => ({
-          id: sticker.id,
-          url: sticker.url,
-          position: sticker.position,
-          scale: sticker.scale,
-        })),
       };
 
       console.log("Saving story with data:", story);
@@ -373,69 +272,48 @@ export default function CreateStory() {
     setMediaScale((prev) => Math.min(Math.max(prev * delta, 0.5), 2));
   };
 
-  // Handle sticker upload
-  const handleStickerDragStart = (id: string) => {
-    setStickers(
-      stickers.map((sticker) =>
-        sticker.id === id ? { ...sticker, isDragging: true } : sticker
-      )
-    );
-  };
+  // Handle file upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleStickerDragStop = (
-    id: string,
-    e: any,
-    data: { x: number; y: number }
-  ) => {
-    // Get container bounds
-    const container = containerRef.current;
-    if (!container) return;
+    // Check if file is an image or video
+    if (file.type.startsWith("image/")) {
+      setMediaType("image");
+    } else if (file.type.startsWith("video/")) {
+      setMediaType("video");
+    } else {
+      // Check file extension for video files
+      const videoExtensions = [
+        ".mp4",
+        ".webm",
+        ".ogg",
+        ".mov",
+        ".avi",
+        ".wmv",
+        ".mkv",
+      ];
+      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
 
-    const containerRect = container.getBoundingClientRect();
-    const stickerElement = stickerRefs.current[id]?.current;
-    if (!stickerElement) return;
+      if (videoExtensions.includes(fileExtension)) {
+        setMediaType("video");
+      } else {
+        alert(
+          "Please select a valid video file (MP4, WebM, OGG, MOV, AVI, WMV, or MKV)"
+        );
+        return;
+      }
+    }
 
-    const stickerRect = stickerElement.getBoundingClientRect();
+    setMediaFile(file);
+    const fileUrl = URL.createObjectURL(file);
+    setMediaPreview(fileUrl);
 
-    // Calculate bounds
-    const maxX = containerRect.width - stickerRect.width;
-    const maxY = containerRect.height - stickerRect.height;
+    // Move to filters tab after upload
+    setActiveTab("filters");
 
-    // Constrain position within container
-    const constrainedX = Math.max(0, Math.min(data.x, maxX));
-    const constrainedY = Math.max(0, Math.min(data.y, maxY));
-
-    // Update sticker position
-    setStickers(
-      stickers.map((sticker) =>
-        sticker.id === id
-          ? {
-              ...sticker,
-              position: { x: constrainedX, y: constrainedY },
-              isDragging: false,
-            }
-          : sticker
-      )
-    );
-  };
-
-  const handleStickerScale = (id: string, e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setStickers(
-      stickers.map((sticker) =>
-        sticker.id === id
-          ? {
-              ...sticker,
-              scale: Math.min(Math.max(sticker.scale * delta, 0.5), 2),
-            }
-          : sticker
-      )
-    );
-  };
-
-  const removeSticker = (id: string) => {
-    setStickers(stickers.filter((sticker) => sticker.id !== id));
+    // Show action menu
+    setShowActionMenu(true);
   };
 
   const handleMediaPositionChange = (position: { x: number; y: number }) => {
@@ -571,68 +449,10 @@ export default function CreateStory() {
                       notDraggable={false}
                       onMediaPositionChange={handleMediaPositionChange}
                       onMediaScaleChange={handleMediaScaleChange}
-                      stickers={stickers}
                     />
                   )}
                 </div>
               </Draggable>
-
-              {/* Render Stickers */}
-              {stickers.map((sticker) => {
-                console.log("Rendering sticker:", sticker);
-                return (
-                  <Draggable
-                    key={sticker.id}
-                    nodeRef={stickerRefs.current[sticker.id]}
-                    position={sticker.position}
-                    onStart={() => handleStickerDragStart(sticker.id)}
-                    onStop={(e, data) =>
-                      handleStickerDragStop(sticker.id, e, data)
-                    }
-                    bounds="parent"
-                    grid={[1, 1]}
-                    defaultPosition={{ x: 0, y: 0 }}
-                  >
-                    <div
-                      ref={stickerRefs.current[sticker.id]}
-                      className={cn(
-                        "absolute cursor-move z-50 transition-transform duration-100",
-                        sticker.isDragging ? "scale-105" : "scale-100"
-                      )}
-                      onWheel={(e) => handleStickerScale(sticker.id, e)}
-                      style={{
-                        transform: `scale(${sticker.scale})`,
-                        transformOrigin: "center",
-                        touchAction: "none",
-                        willChange: "transform",
-                      }}
-                    >
-                      <div className="relative group">
-                        <img
-                          src={sticker.url}
-                          alt="sticker"
-                          className={cn(
-                            "max-w-[100px] max-h-[100px] object-contain pointer-events-none transition-opacity duration-200",
-                            sticker.isDragging ? "opacity-80" : "opacity-100"
-                          )}
-                          draggable={false}
-                        />
-                        <button
-                          className={cn(
-                            "absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center transition-all duration-200",
-                            sticker.isDragging
-                              ? "opacity-0"
-                              : "opacity-0 group-hover:opacity-100"
-                          )}
-                          onClick={() => removeSticker(sticker.id)}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </Draggable>
-                );
-              })}
 
               {/* Draggable Text Element */}
               {text && (
@@ -719,7 +539,7 @@ export default function CreateStory() {
         {/* Tools */}
         <div className="p-4 bg-background border-t border-border/50">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-muted/50 rounded-xl p-0.5 h-10 mb-4">
+            <TabsList className="grid w-full grid-cols-3 bg-muted/50 rounded-xl p-0.5 h-10 mb-4">
               <TabsTrigger
                 value="upload"
                 className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
@@ -747,15 +567,6 @@ export default function CreateStory() {
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                 Filters
-              </TabsTrigger>
-              <TabsTrigger
-                value="stickers"
-                className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
-                onMouseEnter={handleTextToolHover}
-                onMouseLeave={handleMouseLeave}
-              >
-                <Sticker className="h-3.5 w-3.5 mr-1.5" />
-                Stickers
               </TabsTrigger>
             </TabsList>
 
@@ -854,166 +665,6 @@ export default function CreateStory() {
                   </button>
                 ))}
               </div>
-            </TabsContent>
-
-            <TabsContent value="stickers" className="mt-0 space-y-4">
-              <div className="grid grid-cols-4 gap-4">
-                {availableStickers.map((sticker) => (
-                  <button
-                    key={sticker.id}
-                    onClick={() => handleStickerSelect(sticker)}
-                    className="h-24 flex flex-col items-center justify-center gap-2 bg-muted/30 border border-border/50 hover:bg-muted/50 rounded-xl transition-all duration-300 hover:scale-[1.02] p-2"
-                  >
-                    <img
-                      src={sticker.url}
-                      alt={sticker.name}
-                      className="w-12 h-12 object-contain"
-                    />
-                    <span className="text-xs text-foreground font-medium text-center">
-                      {sticker.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <div className="h-24 flex flex-col items-center justify-center gap-2 bg-muted/30 border border-border/50 rounded-xl p-4">
-                <p className="text-foreground text-sm font-medium text-center">
-                  Click a sticker to add it to your story
-                </p>
-                <p className="text-muted-foreground text-xs text-center">
-                  Drag to position and use mouse wheel to resize
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="text" className="mt-0 space-y-4">
-              <div className="relative">
-                <Input
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Type something..."
-                  className="bg-muted/30 border-border/50 text-foreground placeholder:text-muted-foreground rounded-xl text-sm h-10 pr-10"
-                />
-                {text && (
-                  <button
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setText("")}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-xs font-medium">
-                    Text Size
-                  </Label>
-                  <span className="text-muted-foreground text-xs">
-                    {fontSize}px
-                  </span>
-                </div>
-                <Slider
-                  value={[fontSize]}
-                  min={12}
-                  max={72}
-                  step={1}
-                  onValueChange={(value) => setFontSize(value[0])}
-                  className="[&>span]:bg-foreground"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-xs font-medium">
-                    Text Style
-                  </Label>
-                  <button
-                    className="text-xs text-primary flex items-center"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowTextStyles(!showTextStyles);
-                    }}
-                  >
-                    Change <ChevronRight className="h-3 w-3 ml-0.5" />
-                  </button>
-                </div>
-
-                {showTextStyles && (
-                  <div className="grid grid-cols-2 gap-2 mt-2 bg-muted/80 backdrop-blur-sm p-2 rounded-lg border border-border/50 animate-fade-in">
-                    {TEXT_STYLES.map((style) => (
-                      <button
-                        key={style.name}
-                        onClick={() => setTextStyle(style.class)}
-                        className={`p-2 rounded-lg text-center transition-all ${
-                          textStyle === style.class
-                            ? "bg-muted text-foreground"
-                            : "bg-muted/50 text-muted-foreground hover:bg-muted/50"
-                        } ${style.class}`}
-                      >
-                        {style.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-xs font-medium">
-                    Text Color
-                  </Label>
-                  <button
-                    className="w-5 h-5 rounded-full border border-foreground/30"
-                    style={{ backgroundColor: textColor }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowColorPicker(!showColorPicker);
-                    }}
-                  />
-                </div>
-
-                {showColorPicker && (
-                  <div className="bg-muted/80 backdrop-blur-sm p-2 rounded-lg border border-border/50 animate-fade-in">
-                    <div className="grid grid-cols-6 gap-2">
-                      {[
-                        "#ffffff",
-                        "#000000",
-                        "#ff0000",
-                        "#00ff00",
-                        "#0000ff",
-                        "#ffff00",
-                        "#ff00ff",
-                        "#00ffff",
-                        "#ff8800",
-                        "#8800ff",
-                        "#ff0088",
-                        "#00ff88",
-                      ].map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setTextColor(color)}
-                          className={`w-8 h-8 rounded-full transition-all duration-200 ${
-                            textColor === color
-                              ? "ring-2 ring-foreground scale-110"
-                              : "hover:scale-105"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <Palette className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        Tap a color to select it
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-muted-foreground text-xs text-center mt-2">
-                Drag to move text • Double tap to edit
-              </p>
             </TabsContent>
           </Tabs>
         </div>
