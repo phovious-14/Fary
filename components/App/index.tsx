@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Home as HomeIcon, PlusSquare } from "lucide-react";
+import { PlusCircle, Search, Home as HomeIcon, PlusSquare, LogOut, LogIn } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SearchSheet } from "@/components/search-sheet";
 import { sdk } from "@farcaster/frame-sdk";
@@ -263,22 +263,21 @@ export default function Home() {
                 />
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-background" />
               </div>
-              <div className="text-center">
+              <div className="text-center pb-4">
                 <h2 className="font-semibold text-lg text-foreground">
                   {user.display_name}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   @{user.username}
                 </p>
-                <p className="text-xs text-muted-foreground">FID: {user.fid}</p>
               </div>
               <Button
                 onClick={() => signOut()}
                 disabled={isLoading}
-                variant="destructive"
-                className="w-full max-w-[200px] bg-destructive/90 hover:bg-destructive mb-4"
+                variant="default"
+                className="rounded-xl p-2 px-3 hover:opacity-100 hover:bg-gray-400 bg-gray-400 opacity-50 absolute top-1 right-2 mb-4"
               >
-                {isLoading ? "Signing out..." : "Sign out"}
+                <LogOut className="w-5 h-5 text-black" />
               </Button>
             </motion.div>
           ) : (
@@ -290,10 +289,10 @@ export default function Home() {
               <Button
                 onClick={() => signIn()}
                 disabled={isLoading}
-                className="w-full bg-primary/90 hover:bg-primary"
-                size="lg"
+                variant="default"
+                className="rounded-xl p-2 px-3 hover:opacity-100 hover:bg-gray-400 bg-gray-400 opacity-50 absolute top-1 right-2 mb-4"
               >
-                {isLoading ? "Signing in..." : "Sign in"}
+                <LogIn className="w-5 h-5 text-black" />
               </Button>
             </motion.div>
           )}

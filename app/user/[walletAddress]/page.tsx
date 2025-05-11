@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Progress } from "@/components/ui/progress";
 import { X, ChevronLeft } from "lucide-react";
 import { use } from "react";
@@ -15,6 +15,7 @@ export default function UserStoriesPage({
   params: { walletAddress: string };
 }) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const walletAddress = params.walletAddress;
@@ -96,9 +97,125 @@ export default function UserStoriesPage({
     setIsVideoPlaying(false);
   }, [currentStoryIndex]);
 
+  // Update loading state when resources are loaded
+  useEffect(() => {
+    if (
+      !isLoadingUserStories &&
+      filteredUserStories.length > 0 &&
+      currentStory &&
+      loadedResources.has(currentStory.url)
+    ) {
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  }, [
+    isLoadingUserStories,
+    filteredUserStories,
+    currentStory,
+    loadedResources,
+  ]);
+
+  // Function to move to the next story
+  const moveToNextStory = useCallback(() => {
+    // Prevent multiple navigation attempts
+    if (isNavigatingRef.current) {
+      return;
+    }
+
+    isNavigatingRef.current = true;
+    console.log("Moving to next story", {
+      currentStoryIndex,
+      totalStories: filteredUserStories.length,
+    });
+
+    // Check if we're at the last story
+    if (currentStoryIndex < filteredUserStories.length - 1) {
+      // Move to the next story
+      setCurrentStoryIndex((prev) => {
+        const nextIndex = prev + 1;
+        console.log("Setting next index:", nextIndex);
+        return nextIndex;
+      });
+    } else {
+      // We're at the last story, wait a moment before redirecting
+      console.log("Last story reached, redirecting to home");
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
+    }
+
+    // Reset navigation lock after a short delay
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 300);
+  }, [currentStoryIndex, filteredUserStories.length, router]);
+
+  // Handle story progress for images
+  useEffect(() => {
+    if (
+      isLoading ||
+      isLoadingUserStories ||
+      filteredUserStories.length === 0 ||
+      !currentStory ||
+      currentStory.type === "video"
+    ) {
+      return;
+    }
+
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    const duration = 5000; // 5s for images
+    const increment = 100 / (duration / 30); // Update every 30ms
+
+    timerRef.current = setInterval(() => {
+      setProgress((prev) => {
+        const newProgress = prev + increment;
+        if (newProgress >= 100) {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+
+          // For the last story, we want to show it for a moment before redirecting
+          if (currentStoryIndex === filteredUserStories.length - 1) {
+            console.log(
+              "Last image story reached 100%, waiting before redirect"
+            );
+            setTimeout(() => {
+              router.push("/");
+            }, 500);
+            return 100;
+          } else {
+            moveToNextStory();
+            return 0;
+          }
+        }
+        return newProgress;
+      });
+    }, 30);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [
+    currentStory,
+    currentStoryIndex,
+    filteredUserStories,
+    isLoading,
+    isLoadingUserStories,
+    moveToNextStory,
+    router,
+  ]);
+
   // Handle video events
   useEffect(() => {
     if (
+      isLoading ||
       isLoadingUserStories ||
       currentStory?.type !== "video" ||
       !videoRef.current
@@ -152,99 +269,16 @@ export default function UserStoriesPage({
       video.removeEventListener("error", handleError);
       video.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [currentStory, currentStoryIndex, filteredUserStories, router]);
-
-  // Function to move to the next story
-  const moveToNextStory = () => {
-    // Prevent multiple navigation attempts
-    if (isNavigatingRef.current) {
-      return;
-    }
-
-    isNavigatingRef.current = true;
-    console.log("Moving to next story", {
-      currentStoryIndex,
-      totalStories: filteredUserStories.length,
-    });
-
-    // Check if we're at the last story
-    if (currentStoryIndex < filteredUserStories.length - 1) {
-      // Move to the next story
-      setCurrentStoryIndex((prev) => {
-        const nextIndex = prev + 1;
-        console.log("Setting next index:", nextIndex);
-        return nextIndex;
-      });
-    } else {
-      // We're at the last story, wait a moment before redirecting
-      console.log("Last story reached, redirecting to home");
-      setTimeout(() => {
-        router.push("/");
-      }, 500);
-    }
-
-    // Reset navigation lock after a short delay
-    setTimeout(() => {
-      isNavigatingRef.current = false;
-    }, 300);
-  };
-
-  // Handle story progress for images
-  useEffect(() => {
-    if (
-      isLoadingUserStories ||
-      filteredUserStories.length === 0 ||
-      !currentStory ||
-      currentStory.type === "video"
-    ) {
-      return;
-    }
-
-    // Clear any existing timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-    const duration = 5000; // 5s for images
-    const increment = 100 / (duration / 30); // Update every 30ms
-
-    timerRef.current = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + increment;
-        if (newProgress >= 100) {
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-          }
-
-          // For the last story, we want to show it for a moment before redirecting
-          if (currentStoryIndex === filteredUserStories.length - 1) {
-            console.log(
-              "Last image story reached 100%, waiting before redirect"
-            );
-            setTimeout(() => {
-              router.push("/");
-            }, 500);
-            return 100;
-          } else {
-            moveToNextStory();
-            return 0;
-          }
-        }
-        return newProgress;
-      });
-    }, 30);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
   }, [
     currentStory,
     currentStoryIndex,
     filteredUserStories,
-    filteredUserStories,
+    router,
+    isLoading,
+    isLoadingUserStories,
+    moveToNextStory,
   ]);
+
   console.log("currentStory", currentStory);
   console.log("filteredUserStories", filteredUserStories);
   console.log("isLoadingUserStories", isLoadingUserStories);
@@ -252,12 +286,62 @@ export default function UserStoriesPage({
     isLoadingUserStories ||
     filteredUserStories.length === 0 ||
     !currentStory ||
-    !loadedResources.has(currentStory.url)
+    !loadedResources.has(currentStory.url) ||
+    isLoading
   ) {
     return (
       <div className="fixed inset-0 flex justify-center">
-        <div className="w-full max-w-[390px] h-full bg-black relative flex items-center justify-center">
-          <div className="text-white">Loading...</div>
+        <div className="w-full max-w-[390px] h-full bg-black relative">
+          {/* Skeleton progress bars */}
+          <div className="absolute top-0 left-0 right-0 p-2 z-10 flex gap-1">
+            {[1, 2, 3].map((_, index) => (
+              <div
+                key={index}
+                className="h-1 bg-gray-800/50 flex-1 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+              </div>
+            ))}
+          </div>
+
+          {/* Skeleton user info */}
+          <div className="absolute top-8 left-4 z-10 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-800/50 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="h-4 w-28 bg-gray-800/50 rounded relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+              </div>
+              <div className="h-3 w-20 bg-gray-800/50 rounded relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+              </div>
+            </div>
+          </div>
+
+          {/* Skeleton content */}
+          <div className="h-full flex items-center justify-center">
+            <div className="w-full h-full bg-gray-800/50 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+            </div>
+          </div>
+
+          {/* Skeleton navigation buttons */}
+          <div className="absolute top-4 right-4 z-10">
+            <div className="w-6 h-6 bg-gray-800/50 rounded-full relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+            </div>
+          </div>
+          <div className="absolute top-1/2 left-4 z-10 transform -translate-y-1/2">
+            <div className="w-8 h-8 bg-gray-800/50 rounded-full relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+            </div>
+          </div>
+          <div className="absolute top-1/2 right-4 z-10 transform -translate-y-1/2">
+            <div className="w-8 h-8 bg-gray-800/50 rounded-full relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-600 to-transparent animate-shimmer" />
+            </div>
+          </div>
         </div>
       </div>
     );
