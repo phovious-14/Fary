@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
 import { X, Pause } from "lucide-react";
-import { getStoryById } from "@/lib/stories";
 import { StoryCanvas } from "@/components/story-canvas";
 import { use } from "react";
 
@@ -65,36 +64,36 @@ export default function StoryPage({
   };
 
   // Load story data
-  useEffect(() => {
-    if (isClient) {
-      setIsLoading(true);
-      const storyData = getStoryById(storyId);
-      console.log("Story ID:", storyId);
-      console.log("Found story:", storyData);
+  // useEffect(() => {
+  //   if (isClient) {
+  //     setIsLoading(true);
+  //     const storyData = getStoryById(storyId);
+  //     console.log("Story ID:", storyId);
+  //     console.log("Found story:", storyData);
 
-      if (storyData) {
-        setStory(storyData);
-        // Convert single story to media items array
-        const mediaItem = {
-          url: storyData.url,
-          type: storyData.type,
-          filter: storyData.filter,
-          text: storyData.text,
-          textPosition: storyData.textPosition,
-          textColor: storyData.textColor,
-          fontSize: storyData.fontSize,
-          mediaPosition: storyData.mediaPosition,
-          mediaScale: storyData.mediaScale,
-        };
-        console.log("Setting media item:", mediaItem);
-        setMediaItems([mediaItem]);
-        setCurrentMediaIndex(0);
-      } else {
-        console.error("Story not found with ID:", storyId);
-      }
-      setIsLoading(false);
-    }
-  }, [storyId, isClient]);
+  //     if (storyData) {
+  //       setStory(storyData);
+  //       // Convert single story to media items array
+  //       const mediaItem = {
+  //         url: storyData.url,
+  //         type: storyData.type,
+  //         filter: storyData.filter,
+  //         text: storyData.text,
+  //         textPosition: storyData.textPosition,
+  //         textColor: storyData.textColor,
+  //         fontSize: storyData.fontSize,
+  //         mediaPosition: storyData.mediaPosition,
+  //         mediaScale: storyData.mediaScale,
+  //       };
+  //       console.log("Setting media item:", mediaItem);
+  //       setMediaItems([mediaItem]);
+  //       setCurrentMediaIndex(0);
+  //     } else {
+  //       console.error("Story not found with ID:", storyId);
+  //     }
+  //     setIsLoading(false);
+  //   }
+  // }, [storyId, isClient]);
 
   // Get current media item
   const currentMedia = mediaItems[currentMediaIndex];
@@ -110,19 +109,6 @@ export default function StoryPage({
       setTextPosition(story.textPosition);
       setFontSize(story.fontSize);
       setTextColor(story.textColor);
-      setStickers(
-        story.stickers?.map(
-          (sticker: {
-            id: string;
-            url: string;
-            position: { x: number; y: number };
-            scale: number;
-          }) => ({
-            ...sticker,
-            url: processStickerUrl(sticker.url),
-          })
-        ) || []
-      );
     }
   }, [story]);
 

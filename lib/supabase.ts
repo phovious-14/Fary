@@ -21,7 +21,6 @@ export interface Database {
         Row: {
           id: string;
           created_at: string;
-          user_id: string;
           wallet_address: string;
           type: "image" | "video";
           url: string;
@@ -37,7 +36,6 @@ export interface Database {
         Insert: {
           id?: string;
           created_at?: string;
-          user_id: string;
           wallet_address: string;
           type: "image" | "video";
           url: string;
@@ -53,7 +51,6 @@ export interface Database {
         Update: {
           id?: string;
           created_at?: string;
-          user_id?: string;
           wallet_address?: string;
           type?: "image" | "video";
           url?: string;

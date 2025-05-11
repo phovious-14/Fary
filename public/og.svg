@@ -1,8 +1,0 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="630" fill="#F5F0EC"/>
-  <rect x="300" y="165" width="600" height="300" rx="150" fill="#000000"/>
-  <path d="M600 315C488.4 315 405 398.4 405 510C405 621.6 488.4 705 600 705C711.6 705 795 621.6 795 510C795 398.4 711.6 315 600 315ZM600 645C526.8 645 465 583.2 465 510C465 436.8 526.8 375 600 375C673.2 375 735 436.8 735 510C735 583.2 673.2 645 600 645Z" fill="#F5F0EC"/>
-  <path d="M600 435C552 435 510 477 510 525C510 573 552 615 600 615C648 615 690 573 690 525C690 477 648 435 600 435Z" fill="#F5F0EC"/>
-  <text x="600" y="150" font-family="Arial" font-size="48" text-anchor="middle" fill="#000000">StoryGram</text>
-  <text x="600" y="550" font-family="Arial" font-size="24" text-anchor="middle" fill="#000000">Create and share stories with text and filters on Farcaster</text>
-</svg> 

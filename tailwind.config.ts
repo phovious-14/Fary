@@ -11,50 +11,50 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Space-themed color palette
-        "moon-blue": "#3B5CC9",
-        "soft-pink": "#F2C9D6",
-        "midnight-purple": "#1A1A4B",
-        "celestial-blue": "#A6D1F7",
-        "space-blue": "#0A0F2C",
-        "misty-sky": "#D7E4F4",
-        moonlight: "#F8F9FA",
-        stardust: "#B2B9D1",
-
-        // Semantic color mappings
-        background: "#0A0F2C",
-        foreground: "#F8F9FA",
+        // Using Tailwind's default color palette
+        background: {
+          DEFAULT: "rgb(15 23 42)", // slate-900
+          secondary: "rgb(30 41 59)", // slate-800
+          tertiary: "rgb(51 65 85)", // slate-700
+        },
+        foreground: {
+          DEFAULT: "rgb(248 250 252)", // slate-50
+          secondary: "rgb(226 232 240)", // slate-200
+          muted: "rgb(148 163 184)", // slate-400
+        },
         card: {
-          DEFAULT: "#1A1A4B",
-          foreground: "#F8F9FA",
+          DEFAULT: "rgb(30 41 59)", // slate-800
+          foreground: "rgb(248 250 252)", // slate-50
+          secondary: "rgb(51 65 85)", // slate-700
         },
         popover: {
-          DEFAULT: "#1A1A4B",
-          foreground: "#F8F9FA",
+          DEFAULT: "rgb(30 41 59)", // slate-800
+          foreground: "rgb(248 250 252)", // slate-50
         },
         primary: {
-          DEFAULT: "#3B5CC9",
-          foreground: "#F8F9FA",
+          DEFAULT: "rgb(59 130 246)", // blue-500
+          foreground: "rgb(248 250 252)", // slate-50
+          secondary: "rgb(96 165 250)", // blue-400
         },
         secondary: {
-          DEFAULT: "#F2C9D6",
-          foreground: "#1A1A4B",
+          DEFAULT: "rgb(236 72 153)", // pink-500
+          foreground: "rgb(248 250 252)", // slate-50
         },
         muted: {
-          DEFAULT: "#B2B9D1",
-          foreground: "#F8F9FA",
+          DEFAULT: "rgb(148 163 184)", // slate-400
+          foreground: "rgb(248 250 252)", // slate-50
         },
         accent: {
-          DEFAULT: "#1A1A4B",
-          foreground: "#F8F9FA",
+          DEFAULT: "rgb(51 65 85)", // slate-700
+          foreground: "rgb(248 250 252)", // slate-50
         },
         destructive: {
-          DEFAULT: "#FF4D4D",
-          foreground: "#F8F9FA",
+          DEFAULT: "rgb(239 68 68)", // red-500
+          foreground: "rgb(248 250 252)", // slate-50
         },
-        border: "#3B5CC9",
-        input: "#D7E4F4",
-        ring: "#A6D1F7",
+        border: "rgb(51 65 85)", // slate-700
+        input: "rgb(51 65 85)", // slate-700
+        ring: "rgb(59 130 246)", // blue-500
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -73,6 +73,19 @@ const config: Config = {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic":
+          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+        "gradient-primary":
+          "linear-gradient(to right, rgb(59 130 246), rgb(96 165 250))", // blue-500 to blue-400
+        "gradient-dark":
+          "linear-gradient(to bottom, rgb(15 23 42), rgb(30 41 59))", // slate-900 to slate-800
+        "gradient-card":
+          "linear-gradient(to bottom, rgb(30 41 59), rgb(51 65 85))", // slate-800 to slate-700
+        "gradient-accent":
+          "linear-gradient(to right, rgb(51 65 85), rgb(59 130 246))", // slate-700 to blue-500
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -80,25 +93,28 @@ const config: Config = {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        gradient: {
+          "0%, 100%": {
+            "background-size": "200% 200%",
+            "background-position": "left center",
           },
-          to: {
-            height: "0",
+          "50%": {
+            "background-size": "200% 200%",
+            "background-position": "right center",
           },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        gradient: "gradient 8s ease infinite",
       },
     },
   },

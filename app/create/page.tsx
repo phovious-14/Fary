@@ -24,12 +24,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Draggable from "react-draggable";
+import {
+  TransformWrapper,
+  TransformComponent,
+  ReactZoomPanPinchRef,
+} from "react-zoom-pan-pinch";
 
 // Assuming these components exist or will be created
 import { StoryCanvas } from "@/components/story-canvas";
 import { CameraCapture } from "@/components/camera-capture";
-import { saveStory } from "@/lib/stories";
-import { useCursor } from "@/contexts/cursor-context";
+import { useAccount } from "wagmi";
+import { createUserStory } from "@/hooks/backend-hook/user-story";
 
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 const PINATA_GATEWAY_TOKEN = process.env.NEXT_PUBLIC_PINATA_GATEWAY_TOKEN;
@@ -54,12 +59,22 @@ const TEXT_STYLES = [
   { name: "Elegant", class: "font-serif italic" },
 ];
 
+export type Story = {
+  type: "image" | "video";
+  url: string;
+  filter: string;
+  text: string;
+  textPosition: { x: number; y: number };
+  textColor: string;
+  fontSize: number;
+  textStyle: string;
+  mediaPosition: { x: number; y: number };
+  mediaScale: number;
+  wallet_address: string | undefined;
+};
+
 export default function CreateStory() {
   const router = useRouter();
-  const cursorContext = useCursor();
-  const { setCursor, resetCursor } = cursorContext
-    ? cursorContext
-    : { setCursor: () => {}, resetCursor: () => {} };
   const [activeTab, setActiveTab] = useState("upload");
   const [selectedFilter, setSelectedFilter] = useState("");
   const [text, setText] = useState("");
@@ -83,26 +98,97 @@ export default function CreateStory() {
   const nodeRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isConnected, address } = useAccount();
+  const [isMediaLoading, setIsMediaLoading] = useState(true);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Add this effect to fetch stickers
+  // Add viewport size calculation
   useEffect(() => {
-    const fetchStickers = async () => {
-      try {
-        const response = await fetch("/api/stickers");
-        if (!response.ok) throw new Error("Failed to fetch stickers");
-        const data = await response.json();
-        console.log("Fetched stickers data:", data); // Debug log
-      } catch (error) {
-        console.error("Error fetching stickers:", error);
+    const updateViewportSize = () => {
+      setViewportSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    // Initial calculation
+    updateViewportSize();
+
+    // Update on resize
+    window.addEventListener("resize", updateViewportSize);
+    return () => window.removeEventListener("resize", updateViewportSize);
+  }, []);
+
+  // Update container size calculation
+  useEffect(() => {
+    const updateContainerSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({
+          width: rect.width,
+          height: rect.height,
+        });
       }
     };
 
-    fetchStickers();
+    // Initial calculation
+    updateContainerSize();
+
+    // Update on resize
+    const resizeObserver = new ResizeObserver(updateContainerSize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
+
+  // Calculate initial position based on container
+  const calculateInitialPosition = () => {
+    if (!containerSize.width || !containerSize.height) {
+      return { x: 0, y: 0 };
+    }
+
+    // Calculate center position relative to container
+    const centerX = containerSize.width / 2 - containerSize.width * 0.1; // 10% from left
+    const centerY = containerSize.height / 2 - containerSize.height * 0.1; // 10% from top
+
+    return {
+      x: centerX,
+      y: centerY,
+    };
+  };
+
+  // Calculate initial scale based on container
+  const calculateInitialScale = () => {
+    if (!containerSize.width || !containerSize.height) {
+      return 1;
+    }
+
+    // Calculate scale based on container size
+    const containerAspectRatio = containerSize.width / containerSize.height;
+    const mediaAspectRatio = mediaType === "video" ? 16 / 9 : 1; // Assuming 16:9 for video, 1:1 for image
+
+    // Scale to fit container while maintaining aspect ratio
+    let scale = 1;
+    if (containerAspectRatio > mediaAspectRatio) {
+      scale = containerSize.height / (containerSize.width / mediaAspectRatio);
+    } else {
+      scale = containerSize.width / (containerSize.height * mediaAspectRatio);
+    }
+
+    // Limit scale to reasonable bounds
+    return Math.min(Math.max(scale * 0.8, 0.5), 1);
+  };
 
   const handlePublish = async () => {
     if (!mediaFile || !mediaType || !mediaPreview) {
-      // Don't show alert if we're in the process of capturing from camera
       if (!showCamera) {
         alert("Please upload a media file first");
       }
@@ -137,22 +223,21 @@ export default function CreateStory() {
       }
 
       const story = {
-        userId: "1", // Adding a default userId for now
         type: mediaType,
         url: `https://indigo-obedient-wombat-704.mypinata.cloud/ipfs/${resData.data.cid}?pinataGatewayToken=${PINATA_GATEWAY_TOKEN}`,
         filter: selectedFilter,
         text: text,
-        textPosition: textPosition,
-        textColor: textColor,
-        fontSize: fontSize,
-        textStyle: textStyle,
-        mediaPosition: mediaPosition,
-        mediaScale: mediaScale,
+        text_position: textPosition,
+        text_color: textColor,
+        font_size: 24,
+        media_position: position,
+        media_scale: scale,
+        wallet_address: address,
       };
 
-      console.log("Saving story with data:", story);
-      const savedStory = await saveStory(story);
-      console.log("Saved story:", savedStory);
+      const response = await createUserStory(story);
+      alert(response);
+      console.log("Saved story:", response);
 
       // Show success animation
       router.push("/");
@@ -164,48 +249,86 @@ export default function CreateStory() {
     }
   };
 
-  // Handle camera capture
+  // Update handleFileUpload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is an image or video
+    if (file.type.startsWith("image/")) {
+      setMediaType("image");
+    } else if (file.type.startsWith("video/")) {
+      setMediaType("video");
+    } else {
+      // Check file extension for video files
+      const videoExtensions = [
+        ".mp4",
+        ".webm",
+        ".ogg",
+        ".mov",
+        ".avi",
+        ".wmv",
+        ".mkv",
+      ];
+      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+
+      if (videoExtensions.includes(fileExtension)) {
+        setMediaType("video");
+      } else {
+        alert(
+          "Please select a valid video file (MP4, WebM, OGG, MOV, AVI, WMV, or MKV)"
+        );
+        return;
+      }
+    }
+
+    setMediaFile(file);
+    const fileUrl = URL.createObjectURL(file);
+    setMediaPreview(fileUrl);
+
+    // Set initial position and scale based on container
+    const initialPos = calculateInitialPosition();
+    const initialScale = calculateInitialScale();
+
+    setMediaPosition(initialPos);
+    setPosition(initialPos);
+    setMediaScale(initialScale);
+    setScale(initialScale);
+
+    // Move to filters tab after upload
+    setActiveTab("filters");
+    setShowActionMenu(true);
+  };
+
+  // Update handleCameraCapture
   const handleCameraCapture = (file: File) => {
     setMediaFile(file);
     setMediaType("video");
     const fileUrl = URL.createObjectURL(file);
     setMediaPreview(fileUrl);
 
+    // Set initial position and scale based on container
+    const initialPos = calculateInitialPosition();
+    const initialScale = calculateInitialScale();
+
+    setMediaPosition(initialPos);
+    setPosition(initialPos);
+    setMediaScale(initialScale);
+    setScale(initialScale);
+
     // Move to filters tab after capture
     setActiveTab("filters");
-
-    // Show action menu
     setShowActionMenu(true);
 
     // Automatically publish the story
     handlePublish();
   };
 
-  const triggerFileUpload = (type: "image" | "video") => {
-    // Don't trigger file upload if camera is active
-    if (showCamera) return;
-
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  // Add cursor handlers
-  const handleTextToolHover = () => {
-    if (setCursor) setCursor("text");
-  };
-
-  const handleFilterHover = () => {
-    if (setCursor) setCursor("color");
-  };
-
-  const handleCameraHover = () => {
-    if (setCursor) setCursor("video");
-  };
-
-  const handleMouseLeave = () => {
-    if (resetCursor) resetCursor();
-  };
+  // Remove cursor handlers
+  const handleTextToolHover = () => {};
+  const handleFilterHover = () => {};
+  const handleCameraHover = () => {};
+  const handleMouseLeave = () => {};
 
   // Toggle action menu visibility on canvas tap
   const handleCanvasTap = () => {
@@ -244,84 +367,62 @@ export default function CreateStory() {
   };
 
   const handleMediaDragStop = (e: any, data: { x: number; y: number }) => {
-    // Get container bounds
-    const container = containerRef.current;
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const mediaElement = mediaRef.current;
-    if (!mediaElement) return;
-
-    const mediaRect = mediaElement.getBoundingClientRect();
-
-    // Calculate bounds
-    const maxX = containerRect.width - mediaRect.width;
-    const maxY = containerRect.height - mediaRect.height;
-
-    // Constrain position within container
-    const constrainedX = Math.max(0, Math.min(data.x, maxX));
-    const constrainedY = Math.max(0, Math.min(data.y, maxY));
-
+    // Remove bounds checking and allow free movement
     setMediaPosition({ x: data.x, y: data.y });
     setIsMediaDragging(false);
+
+    // Add smooth transition
+    const mediaElement = mediaRef.current;
+    if (mediaElement) {
+      mediaElement.style.transition = "transform 0.2s ease-out";
+      setTimeout(() => {
+        if (mediaElement) {
+          mediaElement.style.transition = "";
+        }
+      }, 200);
+    }
   };
 
   const handleMediaScale = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setMediaScale((prev) => Math.min(Math.max(prev * delta, 0.5), 2));
+    const newScale = Math.min(Math.max(mediaScale * delta, 0.1), 5); // Allow larger scale range
+
+    setMediaScale(newScale);
   };
 
-  // Handle file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Add loading state handler
+  const handleMediaLoad = () => {
+    setIsMediaLoading(false);
+    setMediaError(null);
+  };
 
-    // Check if file is an image or video
-    if (file.type.startsWith("image/")) {
-      setMediaType("image");
-    } else if (file.type.startsWith("video/")) {
-      setMediaType("video");
-    } else {
-      // Check file extension for video files
-      const videoExtensions = [
-        ".mp4",
-        ".webm",
-        ".ogg",
-        ".mov",
-        ".avi",
-        ".wmv",
-        ".mkv",
-      ];
-      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+  const handleMediaError = (error: string) => {
+    setIsMediaLoading(false);
+    setMediaError(error);
+  };
 
-      if (videoExtensions.includes(fileExtension)) {
-        setMediaType("video");
-      } else {
-        alert(
-          "Please select a valid video file (MP4, WebM, OGG, MOV, AVI, WMV, or MKV)"
-        );
-        return;
-      }
+  const handleTransform = (ref: ReactZoomPanPinchRef) => {
+    const { state } = ref;
+    const newScale = state.scale;
+    const newPosition = { x: state.positionX, y: state.positionY };
+
+    // Update local state
+    setScale(newScale);
+    setPosition(newPosition);
+
+    // Update media position and scale for API
+    setMediaPosition(newPosition);
+    setMediaScale(newScale);
+  };
+
+  const triggerFileUpload = (type: "image" | "video") => {
+    // Don't trigger file upload if camera is active
+    if (showCamera) return;
+
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
-
-    setMediaFile(file);
-    const fileUrl = URL.createObjectURL(file);
-    setMediaPreview(fileUrl);
-
-    // Move to filters tab after upload
-    setActiveTab("filters");
-
-    // Show action menu
-    setShowActionMenu(true);
-  };
-
-  const handleMediaPositionChange = (position: { x: number; y: number }) => {
-    setMediaPosition(position);
-  };
-
-  const handleMediaScaleChange = (scale: number) => {
-    setMediaScale(scale);
   };
 
   return (
@@ -334,10 +435,6 @@ export default function CreateStory() {
             size="icon"
             onClick={() => router.push("/")}
             className="text-foreground hover:bg-muted rounded-full w-8 h-8"
-            onMouseEnter={() =>
-              setCursor && setCursor("navigation", { direction: "left" })
-            }
-            onMouseLeave={handleMouseLeave}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -358,10 +455,6 @@ export default function CreateStory() {
                 ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                 : "text-foreground hover:bg-muted"
             )}
-            onMouseEnter={() =>
-              setCursor && setCursor("navigation", { direction: "right" })
-            }
-            onMouseLeave={handleMouseLeave}
           >
             {isPublishing ? (
               <div className="h-4 w-4 border-2 border-foreground border-t-transparent rounded-full animate-spin"></div>
@@ -388,71 +481,130 @@ export default function CreateStory() {
               autoPublish={true}
             />
           ) : mediaPreview && mediaType ? (
-            <div className="relative w-full h-full">
-              <Draggable
-                nodeRef={mediaRef as React.RefObject<HTMLElement>}
-                position={mediaPosition}
-                onStart={handleMediaDragStart}
-                onStop={handleMediaDragStop}
-                bounds="parent"
-                grid={[1, 1]}
-                defaultPosition={{ x: 0, y: 0 }}
-              >
-                <div
-                  ref={mediaRef}
-                  className={cn(
-                    "absolute cursor-move transition-transform duration-100",
-                    isMediaDragging ? "scale-[1.02]" : "scale-100"
-                  )}
-                  style={{
-                    transform: `scale(${mediaScale})`,
-                    transformOrigin: "center",
-                    touchAction: "none",
-                    willChange: "transform",
-                  }}
-                >
-                  {mediaType === "video" ? (
-                    <video
-                      src={mediaPreview}
-                      className={cn(
-                        "w-full h-full object-contain transition-opacity duration-200",
-                        isMediaDragging ? "opacity-90" : "opacity-100"
-                      )}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      controls
-                      style={{
-                        maxHeight: "100%",
-                        maxWidth: "100%",
-                        objectFit: "contain",
-                      }}
-                    />
-                  ) : (
-                    <StoryCanvas
-                      mediaUrl={mediaPreview}
-                      mediaType={mediaType}
-                      filter={selectedFilter}
-                      text={text}
-                      textPosition={textPosition}
-                      textColor={textColor}
-                      fontSize={fontSize}
-                      textStyle={textStyle}
-                      onTextPositionChange={setTextPosition}
-                      autoPlay={true}
-                      loop={true}
-                      muted={true}
-                      controls={false}
-                      mediaPosition={mediaPosition}
-                      mediaScale={mediaScale}
-                      notDraggable={false}
-                      onMediaPositionChange={handleMediaPositionChange}
-                      onMediaScaleChange={handleMediaScaleChange}
-                    />
-                  )}
+            <div className="relative w-full h-full flex items-center justify-center">
+              {isMediaLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              </Draggable>
+              )}
+              {mediaError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+                  <div className="text-center p-4">
+                    <p className="text-destructive font-medium">{mediaError}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        setMediaError(null);
+                        setIsMediaLoading(true);
+                        const mediaElement = mediaRef.current?.querySelector(
+                          mediaType === "video" ? "video" : "img"
+                        );
+                        if (mediaElement) {
+                          mediaElement.src = mediaPreview;
+                        }
+                      }}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <TransformWrapper
+                initialScale={mediaScale || calculateInitialScale()}
+                initialPositionX={
+                  mediaPosition?.x || calculateInitialPosition().x
+                }
+                initialPositionY={
+                  mediaPosition?.y || calculateInitialPosition().y
+                }
+                minScale={0.1}
+                maxScale={10}
+                centerOnInit={false}
+                wheel={{ step: 0.1, disabled: false }}
+                panning={{ disabled: false, velocityDisabled: true }}
+                doubleClick={{ disabled: true }}
+                onTransformed={handleTransform}
+                limitToBounds={false}
+                centerZoomedOut={false}
+                alignmentAnimation={{ disabled: true }}
+                zoomAnimation={{ disabled: true }}
+                velocityAnimation={{ disabled: true }}
+              >
+                <TransformComponent
+                  wrapperClass="w-full h-full"
+                  contentClass="w-full h-full flex items-center justify-center"
+                  wrapperStyle={{ overflow: "visible" }}
+                  contentStyle={{ overflow: "visible" }}
+                >
+                  <div
+                    ref={mediaRef}
+                    className={cn(
+                      "transition-all duration-200 ease-out",
+                      isMediaLoading ? "opacity-0" : "opacity-100"
+                    )}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                      width: "auto",
+                      height: "auto",
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
+                      WebkitTouchCallout: "none",
+                      touchAction: "none",
+                      cursor: "move",
+                    }}
+                  >
+                    {mediaType === "video" ? (
+                      <video
+                        src={mediaPreview}
+                        className={cn(
+                          "w-full h-full object-contain transition-all duration-200",
+                          selectedFilter || ""
+                        )}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        controls
+                        preload="auto"
+                        onLoadedData={handleMediaLoad}
+                        onError={() => handleMediaError("Failed to load video")}
+                        style={{
+                          maxHeight: "100%",
+                          maxWidth: "100%",
+                          objectFit: "contain",
+                          pointerEvents: "none",
+                          touchAction: "none",
+                          WebkitTouchCallout: "none",
+                          WebkitUserSelect: "none",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={mediaPreview}
+                        alt="Story content"
+                        className={cn(
+                          "w-full h-full object-contain transition-all duration-200",
+                          selectedFilter || ""
+                        )}
+                        onLoad={handleMediaLoad}
+                        onError={() => handleMediaError("Failed to load image")}
+                        style={{
+                          maxHeight: "100%",
+                          maxWidth: "100%",
+                          objectFit: "contain",
+                          pointerEvents: "none",
+                          touchAction: "none",
+                          WebkitTouchCallout: "none",
+                          WebkitUserSelect: "none",
+                        }}
+                      />
+                    )}
+                  </div>
+                </TransformComponent>
+              </TransformWrapper>
 
               {/* Draggable Text Element */}
               {text && (
@@ -486,11 +638,6 @@ export default function CreateStory() {
                     </div>
                     <button
                       className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center hover:from-primary/90 hover:to-primary/70 transition-colors"
-                      onMouseEnter={() =>
-                        setCursor &&
-                        setCursor("navigation", { direction: "right" })
-                      }
-                      onMouseLeave={handleMouseLeave}
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePublish();
@@ -511,8 +658,6 @@ export default function CreateStory() {
               <div className="text-center text-muted-foreground">
                 <div
                   className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/30 backdrop-blur-sm flex items-center justify-center border border-dashed border-border hover:bg-muted/50 transition-all duration-300 cursor-pointer"
-                  onMouseEnter={handleTextToolHover}
-                  onMouseLeave={handleMouseLeave}
                   onClick={() => triggerFileUpload("image")}
                 >
                   <Upload className="h-10 w-10" />
@@ -543,8 +688,6 @@ export default function CreateStory() {
               <TabsTrigger
                 value="upload"
                 className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
-                onMouseEnter={handleTextToolHover}
-                onMouseLeave={handleMouseLeave}
               >
                 <Upload className="h-3.5 w-3.5 mr-1.5" />
                 Upload
@@ -552,8 +695,6 @@ export default function CreateStory() {
               <TabsTrigger
                 value="camera"
                 className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
-                onMouseEnter={handleCameraHover}
-                onMouseLeave={handleMouseLeave}
                 onClick={() => setShowCamera(true)}
               >
                 <Camera className="h-3.5 w-3.5 mr-1.5" />
@@ -562,8 +703,6 @@ export default function CreateStory() {
               <TabsTrigger
                 value="filters"
                 className="rounded-lg data-[state=active]:bg-muted data-[state=active]:shadow-sm text-sm font-medium h-full"
-                onMouseEnter={handleFilterHover}
-                onMouseLeave={handleMouseLeave}
               >
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                 Filters
