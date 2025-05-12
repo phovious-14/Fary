@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       // For users without wallet address, only show records from last 24 hours
       const oneDayAgo = new Date();
       oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-      query = query.gte("created_at", oneDayAgo.toISOString());
+      query = query.gte("created_at", oneDayAgo.toUTCString());
     }
 
     const { data: stories, error } = await query;

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Home as HomeIcon, PlusSquare, LogOut, LogIn } from "lucide-react";
+import {
+  PlusCircle,
+  Search,
+  Home as HomeIcon,
+  PlusSquare,
+  LogOut,
+  LogIn,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SearchSheet } from "@/components/search-sheet";
 import { sdk } from "@farcaster/frame-sdk";
@@ -16,6 +23,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useFollowing } from "@/hooks/useFollowing";
 
 const walletAddress = "0x971B8F673637858A7481104Ed72B044c56Bd64A2";
 
@@ -167,6 +175,9 @@ export default function Home() {
   const [context, setContext] = useState<Context.FrameContext>();
   const { allUserStories, isLoadingAllUserStories, errorAllUserStories } =
     useUserStory(walletAddress);
+  const { following, isLoadingFollowing, errorFollowing } = useFollowing(
+    Number(user?.fid) || 0
+  );
 
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
 
@@ -217,12 +228,53 @@ export default function Home() {
         alt: `Story by ${userStory.wallet_address}`,
         rowSpan: row,
         colSpan: col,
+        type: userStory.stories[0]?.type,
         timestamp: new Date(
           userStory.stories[0]?.created_at || Date.now()
         ).toLocaleDateString(),
       };
     });
   }, [filteredUserStories]);
+
+  const mergedGridItems = useMemo(() => {
+    if (!following || !gridItems) return [];
+
+    console.log("following", following);
+
+    return gridItems
+      .map((item) => {
+        const followingUser = following.find(
+          (data: {
+            user?: {
+              verified_addresses?: {
+                primary?: {
+                  eth_address?: string;
+                };
+              };
+            };
+          }) => {
+            return (
+              data?.user?.verified_addresses?.primary?.eth_address?.toLowerCase() ===
+              item.id.toLowerCase() ||
+              user?.verified_addresses?.primary?.eth_address?.toLowerCase() ===
+              item.id.toLowerCase()
+            );
+          }
+        );
+
+        // Only return items that have a matching following user
+        if (followingUser) {
+          return {
+            ...item,
+            followingUser,
+          };
+        }
+        return null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null); // Filter out null items
+  }, [following, gridItems]);
+
+  console.log("Merged Grid Items:", mergedGridItems);
 
   return (
     <main className="mx-auto min-h-screen max-w-[390px] border-x border-border bg-background text-foreground">
@@ -319,9 +371,9 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          ) : gridItems.length > 0 ? (
+          ) : mergedGridItems.length > 0 ? (
             <div className="grid grid-cols-2 gap-4 auto-rows-[200px]">
-              {gridItems.map((item) => (
+              {mergedGridItems.map((item) => (
                 <motion.div
                   key={item.id}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -334,12 +386,19 @@ export default function Home() {
                   )}
                   onClick={() => (window.location.href = `/user/${item.id}`)}
                 >
-                  <Image
-                    src={item.src}
-                    alt={item.alt}
-                    fill
-                    className="object-cover transition-transform group-hover:scale-105"
-                  />
+                  {item.type === "image" ? (
+                      <Image
+                      src={item.src}
+                      alt={item.alt}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <video
+                      src={item.src}
+                      className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
                     <p className="text-sm font-medium">
@@ -371,7 +430,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
       </Card>
     </main>
   );
