@@ -217,8 +217,12 @@ export default function Home() {
   }, [isSDKLoaded]);
 
   const gridItems = useMemo(() => {
+    // Ensure we have an array to spread
+    const userStories = Array.isArray(filteredUserStories)
+      ? filteredUserStories
+      : [];
     // Combine real and dummy stories
-    const allStories = [...(filteredUserStories || []), ...dummyStories];
+    const allStories = [...userStories, ...dummyStories];
 
     return allStories.map((userStory: StoryGroup) => {
       const { row, col } = getRandomGridSpan();
@@ -255,9 +259,9 @@ export default function Home() {
           }) => {
             return (
               data?.user?.verified_addresses?.primary?.eth_address?.toLowerCase() ===
-              item.id.toLowerCase() ||
+                item.id.toLowerCase() ||
               user?.verified_addresses?.primary?.eth_address?.toLowerCase() ===
-              item.id.toLowerCase()
+                item.id.toLowerCase()
             );
           }
         );
@@ -387,7 +391,7 @@ export default function Home() {
                   onClick={() => (window.location.href = `/user/${item.id}`)}
                 >
                   {item.type === "image" ? (
-                      <Image
+                    <Image
                       src={item.src}
                       alt={item.alt}
                       fill

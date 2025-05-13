@@ -1,4 +1,4 @@
-import App from "@/components/Home";
+import App from "@/components/App";
 import { env } from "@/lib/env";
 import { Metadata } from "next";
 
