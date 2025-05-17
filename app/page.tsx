@@ -5,17 +5,18 @@ import { Metadata } from "next";
 const appUrl = env.NEXT_PUBLIC_URL;
 
 const frame = {
-  version: "next",
-  imageUrl: `${appUrl}/fary-logo.jpg`,
-  button: {
-    title: "Launch App",
-    action: {
-      type: "launch_frame",
-      name: "Fary Stories",
-      url: appUrl,
-      splashImageUrl: `${appUrl}/fary-logo.jpg`,
-      splashBackgroundColor: "#ffffff",
+  version: "1",
+  image: `${appUrl}/fary-logo.jpg`,
+  buttons: [
+    {
+      label: "Launch App",
+      action: "post_redirect",
+      target: appUrl,
     },
+  ],
+  post_url: `${appUrl}/api/frame`,
+  input: {
+    text: "Enter your story...",
   },
 };
 
@@ -25,7 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "A starter for Farcaster mini-apps",
     openGraph: {
       title: "Fary Stories",
-      description: "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
+      description:
+        "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
       images: [{ url: `${appUrl}/fary-logo.jpg` }],
       type: "website",
       url: appUrl,
@@ -33,7 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: "Fary Stories",
-      description: "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
+      description:
+        "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
       images: [`${appUrl}/fary-logo.jpg`],
     },
     other: {
