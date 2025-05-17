@@ -5,24 +5,17 @@ import { Metadata } from "next";
 const appUrl = env.NEXT_PUBLIC_URL;
 
 const frame = {
-  version: "1",
-  image: `${appUrl}/fary-logo.jpg`,
-  buttons: [
-    {
-      label: "Launch App",
-      action: "link",
-      target: appUrl,
+  version: "next",
+  imageUrl: `${appUrl}/fary-logo.jpg`,
+  button: {
+    title: "Learn Farcaster",
+    action: {
+      type: "launch_frame",
+      name: "Fary Stories",
+      url: `${appUrl}/`,
+      splashImageUrl: `${appUrl}/fary-logo.jpg`,
+      splashBackgroundColor: "#f7f7f7",
     },
-  ],
-  post_url: `${appUrl}/api/frame`,
-  input: {
-    text: "Enter your story...",
-  },
-  og: {
-    title: "Fary Stories",
-    description:
-      "Create, share, and discover engaging stories in the Farcaster ecosystem.",
-    image: `${appUrl}/fary-logo.jpg`,
   },
 };
 
