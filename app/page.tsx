@@ -10,13 +10,19 @@ const frame = {
   buttons: [
     {
       label: "Launch App",
-      action: "post_redirect",
+      action: "link",
       target: appUrl,
     },
   ],
   post_url: `${appUrl}/api/frame`,
   input: {
     text: "Enter your story...",
+  },
+  og: {
+    title: "Fary Stories",
+    description:
+      "Create, share, and discover engaging stories in the Farcaster ecosystem.",
+    image: `${appUrl}/fary-logo.jpg`,
   },
 };
 
