@@ -1,0 +1,29 @@
+{
+  "accountAssociation": {
+    "header": "{{NEXT_PUBLIC_FARCASTER_HEADER}}",
+    "payload": "{{NEXT_PUBLIC_FARCASTER_PAYLOAD}}",
+    "signature": "{{NEXT_PUBLIC_FARCASTER_SIGNATURE}}"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Fary Stories",
+    "iconUrl": "{{NEXT_PUBLIC_URL}}/fary-logo.jpg",
+    "homeUrl": "{{NEXT_PUBLIC_URL}}",
+    "imageUrl": "{{NEXT_PUBLIC_URL}}/fary-logo.jpg",
+    "buttonTitle": "Launch App",
+    "splashImageUrl": "{{NEXT_PUBLIC_URL}}/fary-logo.jpg",
+    "splashBackgroundColor": "#FFFFFF",
+    "webhookUrl": "{{NEXT_PUBLIC_URL}}/api/webhook",
+    "subtitle": "Share and discover stories",
+    "description": "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
+    "primaryCategory": "social",
+    "tags": ["stories", "social", "content", "community"],
+    "tagline": "Your stories, your voice",
+    "ogTitle": "Fary Stories",
+    "ogDescription": "Create and share your stories with the Farcaster community",
+    "screenshotUrls": ["{{NEXT_PUBLIC_URL}}/fary-logo.jpg"],
+    "heroImageUrl": "{{NEXT_PUBLIC_URL}}/fary-logo.jpg",
+    "ogImageUrl": "{{NEXT_PUBLIC_URL}}/fary-logo.jpg",
+    "noindex": false
+  }
+}
