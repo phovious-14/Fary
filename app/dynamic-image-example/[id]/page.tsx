@@ -11,9 +11,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }): Promise<Metadata> {
-  const { id } = await params;
 
-  const imageUrl = new URL(`${appUrl}/api/og/example/${id}`);
+  const imageUrl = new URL(`${appUrl}/api/og/example`);
 
   const frame = {
     version: "next",
@@ -24,17 +23,17 @@ export async function generateMetadata({
         type: "launch_frame",
         name: "Launch App",
         url: appUrl,
-        splashImageUrl: `${appUrl}/images/splash.png`,
+        splashImageUrl: `${appUrl}/fary-logo.jpg`,
         splashBackgroundColor: "#f7f7f7",
       },
     },
   };
 
   return {
-    title: "Mini App Starter",
+    title: "Fary Stories",
     openGraph: {
-      title: "Mini App Starter",
-      description: "Mini App Next Template",
+      title: "Fary Stories",
+      description: "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
       images: [{ url: imageUrl.toString() }],
     },
     other: {

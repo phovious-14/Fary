@@ -17,28 +17,16 @@ const size = {
  * @param params - Route parameters containing the ID
  * @returns ImageResponse - A dynamically generated image for OpenGraph
  */
-export async function GET(
-  request: Request,
-  {
-    params,
-  }: {
-    params: Promise<{
-      id: string;
-    }>;
-  }
-) {
+export async function GET(request: Request) {
   try {
-    // Extract the ID from the route parameters
-    const { id } = await params;
-
     // Get the application's base URL from environment variables
     const appUrl = env.NEXT_PUBLIC_URL;
 
     // Load the logo image from the public directory
-    const logoImage = await loadImage(`${appUrl}/images/icon.png`);
+    const logoImage = await loadImage(`${appUrl}/fary-logo.jpg`);
 
     // Load and prepare the custom font with the text to be rendered
-    const fontData = await loadGoogleFont("Press+Start+2P", "Example ID:" + id);
+    const fontData = await loadGoogleFont("Press+Start+2P", "Fary Stories");
 
     // Generate and return the image response with the composed elements
     return new ImageResponse(
@@ -78,7 +66,7 @@ export async function GET(
               display: "flex",
             }}
           >
-            Example ID: {id}
+            Fary Stories
           </div>
         </div>
       ),
