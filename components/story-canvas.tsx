@@ -58,10 +58,6 @@ export function StoryCanvas({
   onMediaPositionChange,
   onMediaScaleChange,
 }: StoryCanvasProps) {
-  console.log("StoryCanvas received props:", {
-    mediaUrl,
-    mediaType,
-  });
 
   const mediaContainerRef = useRef<HTMLDivElement>(null);
   const textContainerRef = useRef<HTMLDivElement>(null);

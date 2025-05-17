@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 const getFollowing = async (fid: number) => {
-  console.log("fid", fid);
   const options = {
     method: "GET",
     headers: {
@@ -11,7 +10,7 @@ const getFollowing = async (fid: number) => {
   };
 
   const response = await fetch(
-    `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=5`,
+    `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100`,
     options
   );
 

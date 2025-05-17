@@ -6,14 +6,14 @@ const appUrl = env.NEXT_PUBLIC_URL;
 
 const frame = {
   version: "next",
-  imageUrl: `${appUrl}/images/feed.png`,
+  imageUrl: `${appUrl}/fary-logo.jpg`,
   button: {
     title: "Launch App",
     action: {
       type: "launch_frame",
-      name: "Mini-app Starter",
+      name: "Fary Stories",
       url: appUrl,
-      splashImageUrl: `${appUrl}/images/splash.png`,
+      splashImageUrl: `${appUrl}/fary-logo.jpg`,
       splashBackgroundColor: "#ffffff",
     },
   },
@@ -21,10 +21,20 @@ const frame = {
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Mini-app Starter",
+    title: "Fary Stories",
+    description: "A starter for Farcaster mini-apps",
     openGraph: {
-      title: "Mini-app Starter",
-      description: "A starter for Farcastermini-apps",
+      title: "Fary Stories",
+      description: "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
+      images: [{ url: `${appUrl}/fary-logo.jpg` }],
+      type: "website",
+      url: appUrl,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Fary Stories",
+      description: "Create, share, and discover engaging stories in the Farcaster ecosystem. Connect with storytellers and build your narrative.",
+      images: [`${appUrl}/fary-logo.jpg`],
     },
     other: {
       "fc:frame": JSON.stringify(frame),

@@ -24,138 +24,9 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useFollowing } from "@/hooks/useFollowing";
+import { useQueryClient } from "@tanstack/react-query";
 
 const walletAddress = "0x971B8F673637858A7481104Ed72B044c56Bd64A2";
-
-// Dummy stories for demonstration
-const dummyStories: StoryGroup[] = [
-  {
-    wallet_address: "0x1234...5678",
-    stories: [
-      {
-        id: "1",
-        created_at: new Date().toISOString(),
-        user_id: "user1",
-        wallet_address: "0x1234...5678",
-        type: "image",
-        url: "https://picsum.photos/800/600?random=1",
-        filter: null,
-        text: "First story",
-        text_position: null,
-        text_color: null,
-        font_size: 16,
-        media_position: null,
-        media_scale: null,
-        tags: null,
-      },
-    ],
-  },
-  {
-    wallet_address: "0x2345...6789",
-    stories: [
-      {
-        id: "2",
-        created_at: new Date().toISOString(),
-        user_id: "user2",
-        wallet_address: "0x2345...6789",
-        type: "image",
-        url: "https://picsum.photos/800/600?random=2",
-        filter: null,
-        text: "Second story",
-        text_position: null,
-        text_color: null,
-        font_size: 16,
-        media_position: null,
-        media_scale: null,
-        tags: null,
-      },
-    ],
-  },
-  {
-    wallet_address: "0x3456...7890",
-    stories: [
-      {
-        id: "3",
-        created_at: new Date().toISOString(),
-        user_id: "user3",
-        wallet_address: "0x3456...7890",
-        type: "image",
-        url: "https://picsum.photos/800/600?random=3",
-        filter: null,
-        text: "Third story",
-        text_position: null,
-        text_color: null,
-        font_size: 16,
-        media_position: null,
-        media_scale: null,
-        tags: null,
-      },
-    ],
-  },
-  {
-    wallet_address: "0x4567...8901",
-    stories: [
-      {
-        id: "4",
-        created_at: new Date().toISOString(),
-        user_id: "user4",
-        wallet_address: "0x4567...8901",
-        type: "image",
-        url: "https://picsum.photos/800/600?random=4",
-        filter: null,
-        text: "Fourth story",
-        text_position: null,
-        text_color: null,
-        font_size: 16,
-        media_position: null,
-        media_scale: null,
-        tags: null,
-      },
-    ],
-  },
-  {
-    wallet_address: "0x5678...9012",
-    stories: [
-      {
-        id: "5",
-        created_at: new Date().toISOString(),
-        user_id: "user5",
-        wallet_address: "0x5678...9012",
-        type: "image",
-        url: "https://picsum.photos/800/600?random=5",
-        filter: null,
-        text: "Fifth story",
-        text_position: null,
-        text_color: null,
-        font_size: 16,
-        media_position: null,
-        media_scale: null,
-        tags: null,
-      },
-    ],
-  },
-  {
-    wallet_address: "0x6789...0123",
-    stories: [
-      {
-        id: "6",
-        created_at: new Date().toISOString(),
-        user_id: "user6",
-        wallet_address: "0x6789...0123",
-        type: "image",
-        url: "https://picsum.photos/800/600?random=6",
-        filter: null,
-        text: "Sixth story",
-        text_position: null,
-        text_color: null,
-        font_size: 16,
-        media_position: null,
-        media_scale: null,
-        tags: null,
-      },
-    ],
-  },
-];
 
 // Helper function to generate random grid spans
 const getRandomGridSpan = () => {
@@ -178,6 +49,7 @@ export default function Home() {
   const { following, isLoadingFollowing, errorFollowing } = useFollowing(
     Number(user?.fid) || 0
   );
+  const queryClient = useQueryClient();
 
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
 
@@ -222,7 +94,7 @@ export default function Home() {
       ? filteredUserStories
       : [];
     // Combine real and dummy stories
-    const allStories = [...userStories, ...dummyStories];
+    const allStories = [...userStories];
 
     return allStories.map((userStory: StoryGroup) => {
       const { row, col } = getRandomGridSpan();
@@ -236,14 +108,13 @@ export default function Home() {
         timestamp: new Date(
           userStory.stories[0]?.created_at || Date.now()
         ).toLocaleDateString(),
+        fid: userStory.stories[0]?.fid,
       };
     });
   }, [filteredUserStories]);
 
   const mergedGridItems = useMemo(() => {
     if (!following || !gridItems) return [];
-
-    console.log("following", following);
 
     return gridItems
       .map((item) => {
@@ -278,7 +149,10 @@ export default function Home() {
       .filter((item): item is NonNullable<typeof item> => item !== null); // Filter out null items
   }, [following, gridItems]);
 
-  console.log("Merged Grid Items:", mergedGridItems);
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["userStories"] });
+    queryClient.invalidateQueries({ queryKey: ["following"] });
+  }, [following, allUserStories]);
 
   return (
     <main className="mx-auto min-h-screen max-w-[390px] border-x border-border bg-background text-foreground">
@@ -366,7 +240,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {isLoadingAllUserStories ? (
+          {isLoadingAllUserStories || isLoadingFollowing || isLoading ? (
             <div className="grid grid-cols-2 gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="space-y-2">
@@ -388,7 +262,7 @@ export default function Home() {
                     item.rowSpan === 2 && "row-span-2",
                     item.colSpan === 2 && "col-span-2"
                   )}
-                  onClick={() => (window.location.href = `/user/${item.id}`)}
+                  onClick={() => (window.location.href = `/user/${item.id}/${item.fid}`)}
                 >
                   {item.type === "image" ? (
                     <Image

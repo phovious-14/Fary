@@ -67,9 +67,6 @@ export default function StoryPage({
   // useEffect(() => {
   //   if (isClient) {
   //     setIsLoading(true);
-  //     const storyData = getStoryById(storyId);
-  //     console.log("Story ID:", storyId);
-  //     console.log("Found story:", storyData);
 
   //     if (storyData) {
   //       setStory(storyData);
@@ -85,7 +82,6 @@ export default function StoryPage({
   //         mediaPosition: storyData.mediaPosition,
   //         mediaScale: storyData.mediaScale,
   //       };
-  //       console.log("Setting media item:", mediaItem);
   //       setMediaItems([mediaItem]);
   //       setCurrentMediaIndex(0);
   //     } else {
@@ -129,7 +125,6 @@ export default function StoryPage({
 
   useEffect(() => {
     if (!story && !isLoading) {
-      console.log("No story found, redirecting to home");
       router.push("/");
       return;
     }
@@ -146,7 +141,6 @@ export default function StoryPage({
       // For videos, we'll track the actual video progress
       const videoElement = document.querySelector("video");
       if (!videoElement) {
-        console.log("Video element not found, waiting for it to be created");
         return;
       }
 
@@ -243,7 +237,6 @@ export default function StoryPage({
 
   // Handle touch/mouse events for pause
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    console.log("Touch/Mouse start - pausing story");
     e.preventDefault(); // Prevent default behavior
     setIsPaused(true);
     const videoElement = document.querySelector("video");
@@ -257,7 +250,6 @@ export default function StoryPage({
   };
 
   const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
-    console.log("Touch/Mouse end - resuming story");
     e.preventDefault(); // Prevent default behavior
     setIsPaused(false);
     const videoElement = document.querySelector("video");

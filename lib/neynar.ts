@@ -1,3 +1,5 @@
+"use server";
+
 import { env } from "./env";
 
 export interface NeynarUser {
@@ -15,7 +17,6 @@ export interface NeynarUser {
 }
 
 export const fetchUser = async (fid: string): Promise<NeynarUser> => {
-  console.log("env.NEYNAR_API_KEY", process.env.NEXT_PUBLIC_NEYNAR_API_KEY);
   const response = await fetch(
     `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`,
     {

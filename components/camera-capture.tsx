@@ -82,14 +82,12 @@ export function CameraCapture({
     // Set up data available handler
     mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
-        console.log("Data available:", e.data.size, "bytes");
         chunksRef.current.push(e.data);
       }
     };
 
     // Set up stop handler
     mediaRecorder.onstop = () => {
-      console.log("MediaRecorder stopped, chunks:", chunksRef.current.length);
 
       if (chunksRef.current.length === 0) {
         console.error("No data chunks were recorded");
@@ -101,7 +99,6 @@ export function CameraCapture({
 
       // Create blob from chunks
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
-      console.log("Created blob:", blob.size, "bytes");
 
       if (blob.size === 0) {
         console.error("Created blob is empty");

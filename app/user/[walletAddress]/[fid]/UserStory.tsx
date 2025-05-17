@@ -3,16 +3,31 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Progress } from "@/components/ui/progress";
-import { X, ChevronLeft } from "lucide-react";
+import { X, ChevronLeft, Eye } from "lucide-react";
 import { use } from "react";
 import { StoryCanvas } from "@/components/story-canvas";
 import { useUserStory } from "@/hooks/backend-hook/user-story";
 import { Story, StoryGroup, StoryResponse } from "@/types/story";
+import { useUser } from "@/hooks/use-user";
+import { useUpdateViewers } from "@/hooks/use-update-viewers";
+import { useViewers } from "@/hooks/use-viewers";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { fetchUser } from "@/lib/neynar";
 
 export default function UserStoriesPage({
   walletAddress,
+  fid,
 }: {
   walletAddress: string;
+  fid: string;
 }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -25,40 +40,15 @@ export default function UserStoriesPage({
   const isNavigatingRef = useRef(false);
   const { userStories, isLoadingUserStories, errorUserStories } =
     useUserStory(walletAddress);
+  const [storyUser, setStoryUser] = useState<any | null>(null);
   const [loadedResources, setLoadedResources] = useState<Set<string>>(
     new Set()
   );
 
-  // Preload images and videos when userStories changes
-  useEffect(() => {
-    if (!userStories) return;
-
-    const newLoadedResources = new Set<string>();
-    const stories =
-      userStories.find(
-        (group: StoryGroup) => group.wallet_address === walletAddress
-      )?.stories || [];
-
-    stories.forEach((story: Story) => {
-      if (story.type === "image") {
-        const img = new Image();
-        img.onload = () => {
-          newLoadedResources.add(story.url);
-          setLoadedResources(new Set(newLoadedResources));
-        };
-        img.src = story.url;
-      } else if (story.type === "video") {
-        const video = document.createElement("video");
-        video.preload = "auto";
-        video.onloadeddata = () => {
-          newLoadedResources.add(story.url);
-          setLoadedResources(new Set(newLoadedResources));
-        };
-        video.src = story.url;
-        video.load();
-      }
-    });
-  }, [userStories, walletAddress]);
+  const { updateViewers, updateError } = useUpdateViewers();
+  const { viewers, isLoading: isLoadingViewers } = useViewers(
+    currentStory?.id || ""
+  );
 
   // Function to check if a story is expired (older than 1 day)
   const isStoryExpired = (story: Story) => {
@@ -68,6 +58,7 @@ export default function UserStoriesPage({
     return now.getTime() - storyDate.getTime() > oneDayInMs;
   };
 
+  // Memoize filtered stories to prevent unnecessary recalculations
   const filteredUserStories = useMemo(() => {
     if (!userStories) return [];
 
@@ -80,15 +71,70 @@ export default function UserStoriesPage({
     return userStoryData.stories.filter((story) => !isStoryExpired(story));
   }, [userStories, walletAddress]);
 
+  // Update story user only when user data changes
+  useEffect(() => {
+    const fetchUserOnce = async () => {
+      const user = await fetchUser(fid);
+      setStoryUser(user);
+    };
+    fetchUserOnce();
+  }, [fid]);
+
+  // Preload resources only when userStories changes
+  useEffect(() => {
+    if (!userStories) return;
+
+    const newLoadedResources = new Set<string>();
+    const stories =
+      userStories.find(
+        (group: StoryGroup) => group.wallet_address === walletAddress
+      )?.stories || [];
+
+    const loadPromises = stories.map((story: Story) => {
+      return new Promise<void>((resolve) => {
+        if (story.type === "image") {
+          const img = new Image();
+          img.onload = () => {
+            newLoadedResources.add(story.url);
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = story.url;
+        } else if (story.type === "video") {
+          const video = document.createElement("video");
+          video.preload = "auto";
+          video.onloadeddata = () => {
+            newLoadedResources.add(story.url);
+            resolve();
+          };
+          video.onerror = () => resolve();
+          video.src = story.url;
+          video.load();
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    Promise.all(loadPromises).then(() => {
+      setLoadedResources(newLoadedResources);
+    });
+  }, [userStories, walletAddress]);
+
   // Update current story when index changes
   useEffect(() => {
     if (
       filteredUserStories.length > 0 &&
       currentStoryIndex < filteredUserStories.length
     ) {
-      setCurrentStory(filteredUserStories[currentStoryIndex]);
+      const story = filteredUserStories[currentStoryIndex];
+      setCurrentStory(story);
+      // Update viewers when story is viewed
+      if (story?.id && storyUser?.fid) {
+        updateViewers({ storyId: story.id, fid: storyUser?.fid });
+      }
     }
-  }, [currentStoryIndex, filteredUserStories]);
+  }, [currentStoryIndex, filteredUserStories, updateViewers, storyUser]);
 
   // Reset progress when story index changes
   useEffect(() => {
@@ -101,12 +147,10 @@ export default function UserStoriesPage({
     if (
       !isLoadingUserStories &&
       filteredUserStories.length > 0 &&
-      currentStory &&
-      loadedResources.has(currentStory.url)
+      currentStory
     ) {
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
+      const isResourceLoaded = loadedResources.has(currentStory.url);
+      setIsLoading(!isResourceLoaded);
     }
   }, [
     isLoadingUserStories,
@@ -115,36 +159,20 @@ export default function UserStoriesPage({
     loadedResources,
   ]);
 
-  // Function to move to the next story
+  // Memoize moveToNextStory to prevent unnecessary recreations
   const moveToNextStory = useCallback(() => {
-    // Prevent multiple navigation attempts
-    if (isNavigatingRef.current) {
-      return;
-    }
+    if (isNavigatingRef.current) return;
 
     isNavigatingRef.current = true;
-    console.log("Moving to next story", {
-      currentStoryIndex,
-      totalStories: filteredUserStories.length,
-    });
 
-    // Check if we're at the last story
     if (currentStoryIndex < filteredUserStories.length - 1) {
-      // Move to the next story
-      setCurrentStoryIndex((prev) => {
-        const nextIndex = prev + 1;
-        console.log("Setting next index:", nextIndex);
-        return nextIndex;
-      });
+      setCurrentStoryIndex((prev) => prev + 1);
     } else {
-      // We're at the last story, wait a moment before redirecting
-      console.log("Last story reached, redirecting to home");
       setTimeout(() => {
         router.push("/");
       }, 500);
     }
 
-    // Reset navigation lock after a short delay
     setTimeout(() => {
       isNavigatingRef.current = false;
     }, 300);
@@ -155,20 +183,21 @@ export default function UserStoriesPage({
     if (
       isLoading ||
       isLoadingUserStories ||
+      isLoadingViewers ||
       filteredUserStories.length === 0 ||
       !currentStory ||
-      currentStory.type === "video"
+      currentStory.type === "video" ||
+      storyUser?.fid === null
     ) {
       return;
     }
 
-    // Clear any existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
-    const duration = 5000; // 5s for images
-    const increment = 100 / (duration / 30); // Update every 30ms
+    const duration = 5000;
+    const increment = 100 / (duration / 30);
 
     timerRef.current = setInterval(() => {
       setProgress((prev) => {
@@ -178,11 +207,7 @@ export default function UserStoriesPage({
             clearInterval(timerRef.current);
           }
 
-          // For the last story, we want to show it for a moment before redirecting
           if (currentStoryIndex === filteredUserStories.length - 1) {
-            console.log(
-              "Last image story reached 100%, waiting before redirect"
-            );
             setTimeout(() => {
               router.push("/");
             }, 500);
@@ -204,11 +229,13 @@ export default function UserStoriesPage({
   }, [
     currentStory,
     currentStoryIndex,
-    filteredUserStories,
+    filteredUserStories.length,
     isLoading,
     isLoadingUserStories,
+    isLoadingViewers,
     moveToNextStory,
     router,
+    storyUser,
   ]);
 
   // Handle video events
@@ -216,31 +243,26 @@ export default function UserStoriesPage({
     if (
       isLoading ||
       isLoadingUserStories ||
+      isLoadingViewers ||
       currentStory?.type !== "video" ||
-      !videoRef.current
+      !videoRef.current ||
+      storyUser?.fid === null
     ) {
       return;
     }
 
     const video = videoRef.current;
 
-    const handlePlay = () => {
-      setIsVideoPlaying(true);
-    };
-
+    const handlePlay = () => setIsVideoPlaying(true);
     const handleEnded = () => {
       setIsVideoPlaying(false);
       moveToNextStory();
     };
-
     const handleError = () => {
       console.error("Video playback error");
       setIsVideoPlaying(false);
-      // Skip to next story on error
       moveToNextStory();
     };
-
-    // Update progress based on video time
     const handleTimeUpdate = () => {
       if (video.duration) {
         const videoProgress = (video.currentTime / video.duration) * 100;
@@ -253,7 +275,6 @@ export default function UserStoriesPage({
     video.addEventListener("error", handleError);
     video.addEventListener("timeupdate", handleTimeUpdate);
 
-    // Try to play the video
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch((error) => {
@@ -270,23 +291,21 @@ export default function UserStoriesPage({
     };
   }, [
     currentStory,
-    currentStoryIndex,
-    filteredUserStories,
-    router,
     isLoading,
     isLoadingUserStories,
+    isLoadingViewers,
     moveToNextStory,
+    storyUser,
   ]);
 
-  console.log("currentStory", currentStory);
-  console.log("filteredUserStories", filteredUserStories);
-  console.log("isLoadingUserStories", isLoadingUserStories);
   if (
     isLoadingUserStories ||
     filteredUserStories.length === 0 ||
     !currentStory ||
     !loadedResources.has(currentStory.url) ||
-    isLoading
+    isLoading ||
+    isLoadingViewers ||
+    storyUser?.fid === null
   ) {
     return (
       <div className="fixed inset-0 flex justify-center">
@@ -416,18 +435,73 @@ export default function UserStoriesPage({
 
         {/* User info */}
         <div className="absolute top-8 left-4 z-10 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-white">
-            <img
-              src={`/placeholder.svg?height=32&width=32&text=U${walletAddress}`}
-              alt={`User ${walletAddress} profile`}
-              className="w-full h-full object-cover"
-            />
+          <div key={storyUser.fid} className="flex items-center gap-3">
+            <Avatar>
+              <AvatarImage
+                src={storyUser?.pfp_url}
+                alt={storyUser?.display_name}
+              />
+              <AvatarFallback>{storyUser?.display_name[0]}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{storyUser?.fid}</p>
+              <p className="text-sm text-gray-500">@{storyUser?.username}</p>
+            </div>
           </div>
-          <span className="text-white font-medium">User {walletAddress}</span>
           <span className="text-gray-300 text-xs">
             {formatTime(currentStory?.created_at || "")}
           </span>
         </div>
+
+        {/* Viewers button */}
+        {fid === String(storyUser?.fid) ? (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <button className="absolute bottom-16 left-4 z-10 text-white flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                <span className="text-sm">{viewers?.length || 0}</span>
+              </button>
+            </DrawerTrigger>
+            <DrawerContent className="h-[80vh]">
+              <DrawerHeader>
+                <DrawerTitle>Story Viewers</DrawerTitle>
+              </DrawerHeader>
+              <ScrollArea className="flex-1 px-4">
+                {isLoadingViewers ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                  </div>
+                ) : viewers?.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    No viewers yet
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {viewers?.map((viewer) => (
+                      <div key={viewer.fid} className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage
+                            src={viewer.pfp_url}
+                            alt={viewer.display_name}
+                          />
+                          <AvatarFallback>
+                            {viewer.display_name[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{viewer.display_name}</p>
+                          <p className="text-sm text-gray-500">
+                            @{viewer.username}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </DrawerContent>
+          </Drawer>
+        ) : null}
 
         {/* Story content */}
         <div className="h-full flex items-center justify-center bg-black overflow-hidden">

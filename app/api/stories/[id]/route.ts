@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { env } from "@/lib/env";
 
 export async function GET(
   request: Request,
@@ -17,7 +18,27 @@ export async function GET(
       return NextResponse.json({ error: "Story not found" }, { status: 404 });
     }
 
-    return NextResponse.json(story);
+    // Convert viewers array to comma-separated string
+    const viewerFids = story.viewers?.join(",") || "";
+
+    // Fetch viewer details from Neynar API
+    const options = {
+      method: "GET",
+      headers: {
+        "x-api-key": env.NEYNAR_API_KEY,
+        "x-neynar-experimental": "false",
+      },
+    };
+
+    const response = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/bulk?fids=${viewerFids}`,
+      options
+    );
+
+    const viewerData = await response.json();
+    const viewers = viewerData.users || [];
+
+    return NextResponse.json({ ...story, viewers });
   } catch (error) {
     console.error("Error fetching story:", error);
     return NextResponse.json(

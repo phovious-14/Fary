@@ -1,35 +1,31 @@
-import { useState, useEffect } from "react";
+"use server";
 
-// Mock user data
-const mockUsers = {
-  user1: { id: "user1", name: "John Doe", email: "john@example.com" },
-  user2: { id: "user2", name: "Jane Smith", email: "jane@example.com" },
-  user3: { id: "user3", name: "Bob Johnson", email: "bob@example.com" },
+import { env } from "@/lib/env";
+import { useQuery } from "@tanstack/react-query";
+
+const fetchUserByFid = async (fid: string) => {
+  const options = {
+    method: "GET",
+    headers: { "x-api-key": env.NEYNAR_API_KEY },
+  };
+
+  const res = await fetch(
+    `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`,
+    options
+  );
+  const data = await res.json();
+  return data.users[0];
 };
 
-export function useUser(userId: string) {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export function useUser(fid: string) {
+  const {
+    data: user,
+    isLoading: isLoadingUser,
+    error: errorUser,
+  } = useQuery({
+    queryKey: ["user", fid],
+    queryFn: () => fetchUserByFid(fid),
+  });
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // Get user from static data
-        const userData = mockUsers[userId as keyof typeof mockUsers] || null;
-        setUser(userData);
-      } catch (error) {
-        console.error("Error loading user:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-  }, [userId]);
-
-  return { user, loading };
+  return { user, isLoadingUser, errorUser };
 }

@@ -19,6 +19,7 @@ export type Story = {
   } | null;
   media_scale: number | null;
   tags: string[] | null;
+  fid: string | null;
 };
 
 export type StoryGroup = {

@@ -36,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function UserPage({
   params,
 }: {
-  params: { walletAddress: string };
+  params: { walletAddress: string; fid: string };
 }) {
-  return <UserStoriesPage walletAddress={params.walletAddress} />;
+  return <UserStoriesPage walletAddress={params.walletAddress} fid={params.fid} />;
 }

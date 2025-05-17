@@ -44,7 +44,6 @@ export function VideoStory({
 
     // Set up event listeners
     const handleCanPlay = () => {
-      console.log("Video can play");
       setDebugInfo("Video can play event fired");
 
       // Clear any existing timeout
@@ -71,7 +70,6 @@ export function VideoStory({
     };
 
     const handleLoadedData = () => {
-      console.log("Video loaded data");
       setDebugInfo("Video loadeddata event fired");
 
       // Clear any existing timeout
@@ -166,7 +164,6 @@ export function VideoStory({
     };
 
     const handleEnded = () => {
-      console.log("Video ended");
       setDebugInfo("Video ended event fired");
 
       // Notify parent component that video has ended
@@ -218,10 +215,7 @@ export function VideoStory({
   useEffect(() => {
     if (!videoRef.current) return;
 
-    console.log("Video pause state changed:", isPaused);
-
     if (isPaused) {
-      console.log("Pausing video");
       try {
         videoRef.current.pause();
       } catch (error) {
@@ -235,7 +229,6 @@ export function VideoStory({
         }
       }
     } else {
-      console.log("Resuming video");
       try {
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {

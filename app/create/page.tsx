@@ -35,6 +35,10 @@ import { StoryCanvas } from "@/components/story-canvas";
 import { CameraCapture } from "@/components/camera-capture";
 import { useAccount } from "wagmi";
 import { createUserStory } from "@/hooks/backend-hook/user-story";
+import { useSignIn } from "@/hooks/use-sign-in";
+import { env } from "@/lib/env";
+import { useNotifications } from "@/hooks/backend-hook/use-notifications";
+import { useFollowers } from "@/hooks/useFollowers";
 
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 const PINATA_GATEWAY_TOKEN = process.env.NEXT_PUBLIC_PINATA_GATEWAY_TOKEN;
@@ -71,10 +75,12 @@ export type Story = {
   mediaPosition: { x: number; y: number };
   mediaScale: number;
   wallet_address: string | undefined;
+  fid: string | null;
 };
 
 export default function CreateStory() {
   const router = useRouter();
+  const { sendNotif } = useNotifications()
   const [activeTab, setActiveTab] = useState("upload");
   const [selectedFilter, setSelectedFilter] = useState("");
   const [text, setText] = useState("");
@@ -105,6 +111,12 @@ export default function CreateStory() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  const { user } = useSignIn({
+    autoSignIn: false,
+  });
+
+  const { followers } = useFollowers(Number(user?.fid))
 
   // Add viewport size calculation
   useEffect(() => {
@@ -233,12 +245,22 @@ export default function CreateStory() {
         media_position: position,
         media_scale: scale,
         wallet_address: address,
+        fid: user?.fid,
       };
 
       const response = await createUserStory(story);
-      alert(response);
-      console.log("Saved story:", response);
 
+      // if(response) {
+        sendNotif({
+          fid: [...followers, Number(user?.fid)],
+          title: "New Story",
+          body: "Your story has been published",
+          target_url: `${env.NEXT_PUBLIC_URL}/user/${address}/story/${user?.fid}`,
+        });
+      // } else {
+      //   throw new Error("Failed to publish story");
+      // }
+      
       // Show success animation
       router.push("/");
     } catch (error) {
